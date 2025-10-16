@@ -1,27 +1,10 @@
+/* src/app/globals.css */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  --background-color: #0c0a09; /* Um preto/cinza bem escuro */
+  --text-color: #f8fafc; /* Um branco suave */
+  --primary-color: #9333ea; /* Roxo */
+  --secondary-color: #c084fc; /* Roxo claro */
+  --border-color: #27272a; /* Cinza para bordas */
 }
 
 * {
@@ -30,13 +13,21 @@ body {
   margin: 0;
 }
 
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 a {
   color: inherit;
   text-decoration: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
 }

@@ -1,0 +1,93 @@
+/* src/app/login/page.module.css */
+/* Este CSS é quase idêntico ao de registro, pode copiar e colar */
+.page {
+  display: flex;
+  flex-grow: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.formContainer {
+  background-color: #353535;
+  padding: 2.5rem;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+.title {
+  color: #FFFFFF;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 1.8rem;
+}
+
+.formGroup {
+  margin-bottom: 1.5rem;
+}
+
+.label {
+  display: block;
+  color: #FFFFFF;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+
+.input {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: #555555;
+  border: 1px solid #6b7280;
+  border-radius: 4px;
+  color: #FFFFFF;
+  font-size: 1rem;
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--primary-color);
+}
+
+.button {
+  width: 100%;
+  padding: 0.8rem;
+  background-color: var(--primary-color);
+  color: #FFFFFF;
+  border: none;
+  border-radius: 4px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.button:hover {
+  background-color: var(--secondary-color);
+}
+
+.message {
+  text-align: center;
+  padding: 0.8rem;
+  margin-top: 1rem;
+  border-radius: 4px;
+}
+
+.error {
+  background-color: #fca5a5;
+  color: #7f1d1d;
+}
+
+.link {
+  display: block;
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #a7a7a7;
+  text-decoration: none;
+}
+
+.link:hover {
+  color: #FFFFFF;
+  text-decoration: underline;
+}

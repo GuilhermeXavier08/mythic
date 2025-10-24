@@ -2,7 +2,9 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Header from '@/components/Header'; // <-- Veja o Import Alias! Limpo e direto.
+import Header from '@/components/Header';
+import { AuthProvider } from '@/context/AuthContext';
+import AuthGuard from '@/components/AuthGuard';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,9 +21,12 @@ export default function RootLayout({
   return (
     <html lang="pt-br">
       <body className={inter.className}>
-        <Header />
-        {children}
-        {/* Adicionaremos o Footer aqui depois */}
+        <AuthProvider>
+          <Header /> {/* 1. Header fica sempre visível */}
+          <AuthGuard> {/* 2. AuthGuard protege apenas o {children} */}
+            {children}
+          </AuthGuard>
+        </AuthProvider>
       </body>
     </html>
   );

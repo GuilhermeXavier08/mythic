@@ -17,6 +17,7 @@ model User {
   email     String     @unique
   name      String?
   username  String     @unique // <-- ADICIONE O @unique AQUI
+  friendCode Int       @unique
   password  String
   createdAt DateTime   @default(now())
   purchases Purchase[]

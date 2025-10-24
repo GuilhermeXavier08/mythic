@@ -1,26 +1,68 @@
 /* src/app/register/page.module.css */
+
 .page {
   display: flex;
   flex-grow: 1;
   align-items: center;
   justify-content: center;
   padding: 2rem;
+  width: 100%;
+}
+
+.contentWrapper {
+  display: flex;
+  flex-wrap: wrap; /* Ordem normal, o form já vem primeiro no HTML */
+  align-items: center;
+  justify-content: center;
+  gap: 5rem;
+  width: 100%;
+  max-width: 1100px;
+}
+
+/* --- Coluna da Direita (Texto) --- */
+.welcomeText {
+  flex-basis: 400px;
+  flex-grow: 1;
+  text-align: left;
+}
+
+.welcomeTitle {
+  font-size: 3.2rem;
+  font-weight: 700;
+  color: var(--secondary-color);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.welcomeSubtitle {
+  font-size: 1.1rem;
+  color: #a7a7a7;
+}
+
+/* --- Coluna da Esquerda (Formulário) --- */
+/* Wrapper para conter a msg de sucesso e o form */
+.formWrapper {
+  flex-basis: 450px;
+  flex-grow: 1;
+  width: 100%;
+  max-width: 450px;
 }
 
 .formContainer {
   background-color: #353535;
-  padding: 2.5rem;
-  border-radius: 8px;
-  width: 100%;
-  max-width: 450px;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  padding: 3rem;
+  border-radius: 12px;
+  border: 1px solid #555555;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
 }
 
 .title {
   color: #FFFFFF;
   text-align: center;
-  margin-bottom: 2rem;
-  font-size: 1.8rem;
+  margin-bottom: 2.5rem;
+  font-size: 2rem;
+  font-weight: 600;
+  letter-spacing: -0.5px;
 }
 
 .formGroup {
@@ -29,56 +71,78 @@
 
 .label {
   display: block;
-  color: #FFFFFF;
+  color: #e0e0e0;
   margin-bottom: 0.5rem;
+  font-size: 0.9rem;
   font-weight: 500;
 }
 
 .input {
   width: 100%;
-  padding: 0.8rem;
-  background-color: #555555;
-  border: 1px solid #6b7280;
-  border-radius: 4px;
+  padding: 0.9rem;
+  background-color: #2a2a2a;
+  border: 1px solid #555555;
+  border-radius: 6px;
   color: #FFFFFF;
   font-size: 1rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .input:focus {
   outline: none;
   border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.3);
 }
 
 .button {
   width: 100%;
-  padding: 0.8rem;
+  padding: 0.9rem;
+  margin-top: 1rem;
   background-color: var(--primary-color);
   color: #FFFFFF;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   font-size: 1.1rem;
   font-weight: bold;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .button:hover {
   background-color: var(--secondary-color);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 .message {
   text-align: center;
   padding: 0.8rem;
-  margin-top: 1rem;
-  border-radius: 4px;
+  border-radius: 6px;
 }
 
 .error {
   background-color: #fca5a5;
   color: #7f1d1d;
+  margin-top: 1.5rem;
 }
 
 .success {
   background-color: #86efac;
   color: #14532d;
+  margin-bottom: 1.5rem; /* Espaço entre a msg e o form (que some) */
+}
+
+.link {
+  display: block;
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #a7a7a7;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: var(--secondary-color);
+  text-decoration: underline;
 }

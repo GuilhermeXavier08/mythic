@@ -1,4 +1,5 @@
 /* src/components/Header.module.css */
+
 .header {
   width: 100%;
   padding: 1rem 2rem;
@@ -37,7 +38,20 @@
   color: var(--secondary-color);
 }
 
-.loginButton {
+/* --- Seção Modificada/Adicionada --- */
+.authSection {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.username {
+  color: #a7a7a7; /* Um cinza para o nome de usuário */
+}
+
+/* Estilo unificado para botões de login e logout */
+.loginButton,
+.logoutButton {
   background-color: var(--primary-color);
   color: white;
   font-weight: bold;
@@ -46,8 +60,17 @@
   border-radius: 6px;
   cursor: pointer;
   transition: background-color 0.2s ease-in-out;
+  text-decoration: none; /* Para o Link */
+  display: inline-block; /* Para o Link */
+  font-size: 1rem; /* Garante tamanho da fonte */
 }
 
-.loginButton:hover {
+.loginButton:hover,
+.logoutButton:hover {
   background-color: var(--secondary-color);
+}
+.leftSection {
+  display: flex;
+  align-items: center;
+  gap: 2rem; /* Adiciona um espaço entre o Logo e a Navegação */
 }

@@ -3,23 +3,43 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+// Instancie o Prisma fora da função (ou use a lib que fizemos)
+import { prisma } from '@/lib/prisma';
+
+// --- NOVA FUNÇÃO HELPER ---
+// Esta função gera um código e verifica se ele já existe no banco
+async function generateUniqueFriendCode(): Promise<number> {
+  let code: number;
+  let existingUser = true;
+
+  while (existingUser) {
+    // Gera um número aleatório entre 100.000.000 e 999.999.999
+    code = Math.floor(100_000_000 + Math.random() * 900_000_000);
+    
+    // Verifica se algum usuário já tem esse código
+    existingUser = await prisma.user.findUnique({
+      where: { friendCode: code },
+    });
+  }
+  
+  // @ts-ignore
+  return code; // Retorna o código único
+}
+// --- FIM DA FUNÇÃO HELPER ---
+
 
 export async function POST(request: Request) {
   try {
-    // 1. Extrair os dados do corpo da requisição
     const body = await request.json();
     const { username, email, password } = body;
 
-    // 2. Validar os dados de entrada
     if (!username || !email || !password) {
       return NextResponse.json({ error: 'Todos os campos são obrigatórios' }, { status: 400 });
     }
 
-    // 3. Verificar se o email ou username já existem
     const existingUserByEmail = await prisma.user.findUnique({ where: { email } });
     if (existingUserByEmail) {
-      return NextResponse.json({ error: 'Este email já está em uso' }, { status: 409 }); // 409 Conflict
+      return NextResponse.json({ error: 'Este email já está em uso' }, { status: 409 });
     }
 
     const existingUserByUsername = await prisma.user.findUnique({ where: { username } });
@@ -27,21 +47,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Este nome de usuário já está em uso' }, { status: 409 });
     }
 
-    // 4. Criptografar a senha
-    const hashedPassword = await bcrypt.hash(password, 10); // O 10 é o "custo" do hash
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    // --- GERA O NOVO CÓDIGO ---
+    const friendCode = await generateUniqueFriendCode();
 
-    // 5. Salvar o novo usuário no banco de dados
+    // --- SALVA O USUÁRIO COM O NOVO CÓDIGO ---
     const newUser = await prisma.user.create({
       data: {
         username,
         email,
         password: hashedPassword,
+        friendCode: friendCode, // <-- ADICIONADO
       },
     });
 
-    // 6. Retornar uma resposta de sucesso (sem a senha!)
     const { password: _, ...userWithoutPassword } = newUser;
-    return NextResponse.json(userWithoutPassword, { status: 201 }); // 201 Created
+    return NextResponse.json(userWithoutPassword, { status: 201 });
 
   } catch (error) {
     console.error(error);

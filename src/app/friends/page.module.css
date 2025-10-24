@@ -1,0 +1,106 @@
+/* src/app/friends/page.module.css */
+.page {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.5rem;
+  padding: 4rem;
+  color: #a7a7a7;
+}
+
+/* Seção do Perfil */
+.profileSection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem;
+  background-color: #353535;
+  border-radius: 12px;
+  border: 1px solid #555555;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  margin-bottom: 2rem;
+}
+
+.profileIcon {
+  color: #a7a7a7;
+  margin-bottom: 1rem;
+}
+
+.username {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #FFFFFF;
+  margin-bottom: 1rem;
+}
+
+.idBox {
+  background-color: #2a2a2a;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  border: 1px solid #555555;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.idBox:hover {
+  background-color: #444444;
+}
+
+.idBox span {
+  color: #a7a7a7;
+  font-size: 0.9rem;
+}
+
+.idBox strong {
+  color: var(--secondary-color);
+  font-size: 1.1rem;
+}
+
+/* Seção das Abas */
+.tabsSection {
+  width: 100%;
+}
+
+.tabHeaders {
+  display: flex;
+  border-bottom: 2px solid #353535;
+  margin-bottom: 1.5rem;
+}
+
+.tabButton {
+  padding: 0.75rem 1.5rem;
+  background-color: transparent;
+  border: none;
+  color: #a7a7a7;
+  font-size: 1.1rem;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+  margin-bottom: -2px; /* Alinha com a borda de baixo */
+}
+
+.tabButton:hover {
+  color: #FFFFFF;
+}
+
+.tabButton.active {
+  color: var(--secondary-color);
+  border-bottom-color: var(--secondary-color);
+  font-weight: 600;
+}
+
+.tabContent {
+  padding: 1rem 0;
+}

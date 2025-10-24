@@ -1,0 +1,54 @@
+/* src/components/FriendsList.module.css */
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.message {
+  text-align: center;
+  color: #a7a7a7;
+  padding: 1rem;
+}
+
+.friendItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: #353535;
+  padding: 1rem;
+  border-radius: 6px;
+}
+
+.friendInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.friendIcon {
+  color: #a7a7a7;
+}
+
+.friendDetails {
+  display: flex;
+  flex-direction: column;
+}
+
+.friendUsername {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.status {
+  font-size: 0.9rem;
+}
+
+.online {
+  color: #86efac; /* Verde */
+}
+
+.offline {
+  color: #a7a7a7;
+}

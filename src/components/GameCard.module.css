@@ -1,0 +1,43 @@
+/* src/components/GameCard.module.css */
+.card {
+  background-color: #353535;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  text-decoration: none;
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3);
+}
+
+.image {
+  width: 100%;
+  height: 250px; /* Altura fixa para a imagem */
+  object-fit: cover; /* Garante que a imagem cubra o espaço */
+  background-color: #555555;
+}
+
+.content {
+  padding: 1rem;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.price {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: var(--secondary-color);
+}

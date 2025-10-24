@@ -2,17 +2,63 @@
 .main {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  flex-grow: 1; /* Faz o main ocupar o espaço disponível */
-}
-
-.description {
-  text-align: center;
+  flex-grow: 1;
+  padding: 2rem;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
 .title {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 700;
+  margin-bottom: 2rem;
+}
+
+.username {
+  color: var(--primary-color);
+}
+
+.section {
+  margin-bottom: 2.5rem;
+  width: 100%;
+}
+
+.sectionTitle {
+  font-size: 1.8rem;
+  font-weight: 600;
   margin-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.placeholderGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.placeholderCard {
+  background-color: #353535;
+  height: 150px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  color: #a7a7a7;
+  border: 1px dashed #555555;
+}
+
+.placeholderList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.placeholderFriend {
+  background-color: #353535;
+  padding: 1rem;
+  border-radius: 4px;
+  color: #a7a7a7;
 }

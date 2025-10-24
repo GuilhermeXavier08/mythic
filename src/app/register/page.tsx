@@ -1,8 +1,9 @@
 // src/app/register/page.tsx
-'use client'; // Essencial para usar hooks como useState e eventos
+'use client';
 
 import { useState, FormEvent } from 'react';
 import styles from './page.module.css';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function RegisterPage() {
@@ -11,83 +12,105 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter();
 
   const handleSubmit = async (event: FormEvent) => {
-    event.preventDefault(); // Impede o recarregamento da página
+    event.preventDefault();
     setError(null);
     setSuccess(null);
 
-    // Conexão com nossa API
     try {
       const response = await fetch('/api/auth/register', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, email, password }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        // Se a resposta não for 2xx, lança um erro com a mensagem da API
         throw new Error(data.error || 'Algo deu errado');
       }
 
-      setSuccess('Usuário criado com sucesso! Você já pode fazer o login.');
-      // Limpar o formulário
+      setSuccess('Usuário criado com sucesso! Redirecionando para o login...');
       setUsername('');
       setEmail('');
       setPassword('');
 
-    } catch (error: any) {
+      setTimeout(() => {
+        router.push('/login');
+      }, 3000);
+
+    // --- CORREÇÃO AQUI ---
+    // Estava "} catch (error: any) ="
+    // O correto é "} catch (error: any) {"
+    } catch (error: any) { 
       setError(error.message);
     }
+    // --- FIM DA CORREÇÃO ---
   };
 
   return (
     <div className={styles.page}>
-      <div className={styles.formContainer}>
-        <h1 className={styles.title}>Criar Conta na Mythic</h1>
-        <form onSubmit={handleSubmit}>
-          <div className={styles.formGroup}>
-            <label htmlFor="username" className={styles.label}>Nome de Usuário</label>
-            <input
-              type="text"
-              id="username"
-              className={styles.input}
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label htmlFor="email" className={styles.label}>Email</label>
-            <input
-              type="email"
-              id="email"
-              className={styles.input}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-          <div className={styles.formGroup}>
-            <label htmlFor="password" className={styles.label}>Senha</label>
-            <input
-              type="password"
-              id="password"
-              className={styles.input}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-          <button type="submit" className={styles.button}>Registrar</button>
+      <div className={styles.contentWrapper}>
 
-          {error && <p className={`${styles.message} ${styles.error}`}>{error}</p>}
+        {/* Formulário primeiro (esquerda) */}
+        <div className={styles.formWrapper}>
           {success && <p className={`${styles.message} ${styles.success}`}>{success}</p>}
-        </form>
+          
+          <div className={styles.formContainer} style={{ display: success ? 'none' : 'block' }}>
+            <h2 className={styles.title}>Criar Conta na Mythic</h2>
+            <form onSubmit={handleSubmit}>
+              <div className={styles.formGroup}>
+                <label htmlFor="username" className={styles.label}>Nome de Usuário</label>
+                <input
+                  type="text"
+                  id="username"
+                  className={styles.input}
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label htmlFor="email" className={styles.label}>Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  className={styles.input}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label htmlFor="password" className={styles.label}>Senha</label>
+                <input
+                  type="password"
+                  id="password"
+                  className={styles.input}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+              <button type="submit" className={styles.button}>Registrar</button>
+
+              {error && <p className={`${styles.message} ${styles.error}`}>{error}</p>}
+              
+              <Link href="/login" className={styles.link}>
+                Já tem uma conta? Faça o login
+              </Link>
+            </form>
+          </div>
+        </div>
+        
+        {/* Texto de boas-vindas (direita) */}
+        <div className={styles.welcomeText}>
+          <h1 className={styles.welcomeTitle}>A Lenda Começa Aqui.</h1>
+          <p className={styles.welcomeSubtitle}>Crie sua conta e junte-se à comunidade Mythic.</p>
+        </div>
+
       </div>
     </div>
   );

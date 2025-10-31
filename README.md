@@ -39,6 +39,28 @@ Desenvolvimento de uma aplicação web com possibilidade de jogar e socializar c
 ### Pessoal
 - Equipe de Colaboradores
 
+## Equipe de Desenvolvimento
+
+| Nome | Função |
+|------|--------|
+| João Cardoso | Programador |
+| Guilherme Xavir | Programador |
+| Eduardo Silva Barbosa | Prototipação e Esboço |
+| Enzo Paralupi | Prototipação e Esboço |
+| Kaun Santos | Prototipação e Esboço |
+| Derick Correia | Documentação |
+| Enzo Donizetti | Documentação |
+
+##  Cronograma Resumido (Exemplo)
+| Etapa | Descrição | Duração |
+|-------|------------|----------|
+| Planejamento | Definição do escopo e requisitos | 2 semanas |
+| Design e Protótipos | Criação das telas no Figma | 3 semanas |
+| Desenvolvimento | Implementação do front e back-end | 6 semanas |
+| Testes e Correções | Ajustes e otimização de performance | 2 semanas |
+| Entrega Final | Implantação e documentação | 1 semana |
+
+
 ## Diagrama de Fluxo
 ```mermaid
 graph TD

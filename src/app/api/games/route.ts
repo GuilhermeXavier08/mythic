@@ -1,15 +1,17 @@
 // src/app/api/games/route.ts
 import { NextResponse } from 'next/server';
-// Importe o 'prisma' da nossa lib, em vez do '@prisma/client'
 import { prisma } from '@/lib/prisma';
 
-// const prisma = new PrismaClient(); <-- REMOVA ESTA LINHA
-
-// GET (Busca todos os jogos)
+// GET (Busca todos os jogos APROVADOS)
 export async function GET() {
   try {
-    // Esta linha agora usa a instância única
-    const games = await prisma.game.findMany();
+    const games = await prisma.game.findMany({
+      // --- MUDANÇA CRÍTICA AQUI ---
+      where: {
+        status: 'APPROVED' // Só mostra jogos aprovados na loja pública
+      }
+      // --- FIM DA MUDANÇA ---
+    });
     return NextResponse.json(games, { status: 200 });
   } catch (error) {
     console.error(error);

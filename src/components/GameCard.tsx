@@ -20,9 +20,9 @@ export default function GameCard({ game }: GameCardProps) {
         src={game.imageUrl}
         alt={`Capa do jogo ${game.title}`}
         width={300}
-        height={400} // A proporção é importante, mas o CSS vai controlar
-        className={styles.image}
-        priority // Opcional, para carregar imagens principais mais rápido
+        height={400} // <-- FALTANDO (para a proporção 3:4)
+        className={styles.image} // <-- FALTANDO (para o CSS)
+        priority // <-- Opcional, mas bom para performance
       />
       <div className={styles.content}>
         <h3 className={styles.title}>{game.title}</h3>

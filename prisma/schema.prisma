@@ -5,35 +5,57 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql" // Diz ao Prisma que estamos usando MySQL
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
-// Modelo para a tabela de Usuários
-// prisma/schema.prisma
+// --- NOVO: Define as funções de usuário ---
+enum Role {
+  USER
+  ADMIN
+}
+
+// --- NOVO: Define os status de um jogo ---
+enum GameStatus {
+  PENDING   // Pendente de aprovação
+  APPROVED  // Aprovado e visível na loja
+  REJECTED  // Rejeitado pelo admin
+}
 
 model User {
   id        String     @id @default(cuid())
   email     String     @unique
   name      String?
-  username  String     @unique // <-- ADICIONE O @unique AQUI
+  username  String     @unique
   friendCode Int       @unique
   password  String
   createdAt DateTime   @default(now())
+  
+  role      Role       @default(USER) // <-- ADICIONADO (Todo novo usuário é USER)
+  
   purchases Purchase[]
+  submittedGames Game[] // <-- ADICIONADO (Lista de jogos que este usuário enviou)
 }
 
-// Modelo para a tabela de Jogos
 model Game {
   id          String     @id @default(cuid())
   title       String
   description String
   price       Float
   imageUrl    String
+  
+  gameUrl     String     @default("") // <-- LinHA CORRIGIDA
+  
+  status      GameStatus @default(PENDING)
+  
+  developerId String
+  developer   User     @relation(fields: [developerId], references: [id])
+
   purchases   Purchase[]
+  
+  @@unique([developerId, title])
 }
 
-// Modelo para a tabela de Compras (a "biblioteca" do usuário)
 model Purchase {
   id          String   @id @default(cuid())
   userId      String
@@ -43,5 +65,5 @@ model Purchase {
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
 
-  @@unique([userId, gameId]) // Garante que um usuário não pode comprar o mesmo jogo duas vezes
+  @@unique([userId, gameId])
 }

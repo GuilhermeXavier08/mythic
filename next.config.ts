@@ -1,7 +1,21 @@
-import type { NextConfig } from "next";
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true, // Você pode ter outras configs aqui
 
-const nextConfig: NextConfig = {
-  /* config options here */
+  // --- ADICIONE ESTE BLOCO ---
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'via.placeholder.com',
+      },
+      { // --- ADICIONE ESTE BLOCO NOVO ---
+        protocol: 'https',
+        hostname: 'placehold.co',
+      },
+    ],
+  },
+  // --- FIM DO BLOCO ---
 };
 
-export default nextConfig;
+module.exports = nextConfig;

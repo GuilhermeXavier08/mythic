@@ -177,3 +177,8 @@ graph TD
     caso1 --> caso5
     caso1 --> caso6
 ```
+
+
+# Figma
+
+- https://www.figma.com/design/RWTzYGELO0kp2GblTdFi6W/Untitled?node-id=0-1&t=94FZdp9vr8wEpFeC-1

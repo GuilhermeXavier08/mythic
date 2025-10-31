@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `game` ADD COLUMN `gameUrl` VARCHAR(191) NOT NULL DEFAULT '';

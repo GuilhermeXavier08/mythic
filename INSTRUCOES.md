@@ -5,7 +5,7 @@ git clone https://github.com/GuilhermeXavier08/mythic.git
 
 ## Para contribuir com esse projeto
 * entre na sua branch(seu nome)
-`git checkout <nome_branch>`  
+`git checkout <nome_branch>` e digite `git pull origin main` para trazer os dados mais recentes da main.
 
 * ao terminar sua contribuição, faça __push__ para o servidor remoto no branch que você criou. Por exemplo:  
 `git add .`  

@@ -22,7 +22,7 @@ Desenvolvimento de uma aplicação web com possibilidade de jogar e socializar c
 
 ### Requisitos Funcionais
 - RF01: Permitir cadastro e login via e-mail. 
-- RF02: Criar e personalizar perfil (nome, foto, biografia, status, avatar). 
+- RF02: Criar e personalizar perfil (nome, foto, biografia, status, avatar)
 - RF03: Exibir lista de jogos com categorias. 
 - RF04: Implementar sistema de amigos. 
 - RF05: Oferecer chats com amigos. 

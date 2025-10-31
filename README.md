@@ -42,52 +42,50 @@ Desenvolvimento de uma aplicação web com possibilidade de jogar e socializar c
 ## Diagrama de Fluxo
 ```mermaid
 graph TD
-    subgraph Fluxo Desenvolvedor/Admin
-        A(Começo) --> B[Desenvolvedor faz login]
-        B --> C[Desenvolvedor envia o jogo]
-        C --> D[Jogo com status="pendente"]
-        D --> E[Administrador analisa o jogo]
-        E --> F{Decisão}
-        F -- Não --> B
-    end
-
-    subgraph Fluxo Usuário
-        G[Jogo com status="aprovado"] --> H[Usuário faz login]
-        H --> I[Usuário visualiza jogos]
-        I --> J[Usuário escolhe e realiza a compra]
-        J --> K[Sistema adiciona jogo a biblioteca do usuário]
-        K --> L[Usuário baixa e joga]
-        L --> M(Fim)
-    end
-
-    %% Conexão entre os fluxos
-    F -- Sim --> G
+    A[Começo] --> B[Desenvolvedor faz login]
+    B --> C[Desenvolvedor envia o jogo]
+    C --> D[Jogo com status="pendente"]
+    D --> E[Administrador analisa o jogo]
+    E --> F{Decisão}
+    
+    %% Lado "Sim" (Fluxo do Usuário)
+    F -- Sim --> G[Jogo com status="aprovado"]
+    G --> H[Usuário faz login]
+    H --> I[Usuário visualiza jogos]
+    I --> J[Usuário escolhe e realiza a compra]
+    J --> K[Sistema adiciona jogo a biblioteca do usuário]
+    K --> L[Usuário baixa e joga]
+    L --> M(Fim)
+    
+    %% Lado "Não"
+    F -- Não --> B
 ```
 ## Diagrama de Classe
 ```mermaid
 classDiagram
+
     class Jogo {
-        String titulo
-        String descricao
-        String genero
-        String tamanho
-        List~String~ imagens
+        +String titulo
+        +String descricao
+        +String genero
+        +String tamanho
+        +List~String~ imagens
         +atualizarStatus(novoStatus: String)
     }
 
     class Desenvolvedor {
-        String nome
-        String email
-        String senha
-        List~Jogo~ JogosEnviados
+        +String nome
+        +String email
+        +String senha
+        +List~Jogo~ JogosEnviados
         +enviarJogo()
     }
 
     class Usuário {
-        String nome
-        String email
-        String senha
-        boolean contaAtiva
+        +String nome
+        +String email
+        +String senha
+        +boolean contaAtiva
         +cadastrarConta()
         +fazerLogin()
         +visualizarBiblioteca()
@@ -95,17 +93,17 @@ classDiagram
     }
 
     class Biblioteca {
-        List~Jogo~ jogos
-        Usuário usuario
+        +List~Jogo~ jogos
+        +Usuário usuario
         +adicionarJogo(jogo: Jogo)
         +removerJogo(jogo: Jogo)
         +listarJogos()
     }
 
     class Administrador {
-        String nome
-        String email
-        String senha
+        +String nome
+        +String email
+        +String senha
         +cadastrarJogo()
         +editarJogo(jogo: Jogo)
         +removerJogo(jogo: Jogo)
@@ -114,55 +112,47 @@ classDiagram
         +gerenciarPlataforma()
     }
 
-    %% Relacionamentos
-    Usuário "1.1" *-- "1.1" Biblioteca : Possui
-    Biblioteca "1.1" o-- "1..*" Jogo : Contém
-    Usuário -- "1..*" Jogo : Baixa/Joga
-    Desenvolvedor "1..*" <--> "1..*" Jogo : Envia/Desenvolve
-    Administrador -- "1..*" Desenvolvedor : Gerencia
-    Administrador -- "1..*" Usuário : Gerencia
+    %% Relacionamentos da foto
+    Usuário "1.1" -- "1.1" Biblioteca
+    Biblioteca "1..*" o-- "1..*" Jogo
+    Usuário "1" -- "1..*" Jogo
+    Desenvolvedor "1..*" <--> "1..*" Jogo
+    Administrador "1" -- "1..*" Desenvolvedor
+    Administrador "1" -- "1..*" Usuário
 ```
 ## Diagrama de Uso
 ```mermaid
-useCaseDiagram
-    %% Definição dos Atores
-    actor Usuário
-    actor Desenvolvedor
-    actor Administrador
+graph TD
 
-    %% Delimitação do Sistema
-    rectangle "Plataforma de Jogos" {
-        
-        %% Casos de Uso do Usuário
-        Usuário -- (Cadastrar Conta)
-        Usuário -- (Fazer Login)
-        Usuário -- (Navegar na Loja)
-        Usuário -- (Comprar Jogo)
-        Usuário -- (Acessar Biblioteca)
-        Usuário -- (Baixar Jogo)
-        
-        %% Casos de Uso do Desenvolvedor
-        Desenvolvedor -- (Fazer Login)
-        Desenvolvedor -- (Enviar Jogo)
-        
-        %% Casos de Uso do Administrador
-        Administrador -- (Fazer Login)
-        Administrador -- (Analisar Jogo Enviado)
-        Administrador -- (Gerenciar Usuários)
-        Administrador -- (Gerenciar Jogos)
-    }
+    subgraph "Plataforma de Jogos"
+        caso1([Fazer Login])
+        caso2([Enviar Jogo])
+        caso3([Analisar Jogo])
+        caso4([Visualizar Jogos])
+        caso5([Comprar Jogo])
+        caso6([Baixar e Jogar])
+    end
 
-    %% Relações entre Casos de Uso (baseado no fluxo)
-    (Comprar Jogo) ..> (Navegar na Loja) : <<extend>>
-    (Baixar Jogo) ..> (Acessar Biblioteca) : <<include>>
-    (Analisar Jogo Enviado) ..> (Enviar Jogo) : <<extend>>
+    Dev([Desenvolvedor])
+    Usr([Usuário])
+    Adm([Administrador])
+
+    Dev --> caso1
+    Dev --> caso2
+
+    Usr --> caso1
+    Usr --> caso4
+    Usr --> caso5
+    Usr --> caso6
     
-    %% Relação de 'include' para Login (necessário para a maioria das ações)
-    (Navegar na Loja) ..> (Fazer Login) : <<include>>
-    (Comprar Jogo) ..> (Fazer Login) : <<include>>
-    (Acessar Biblioteca) ..> (Fazer Login) : <<include>>
-    (Enviar Jogo) ..> (Fazer Login) : <<include>>
-    (Analisar Jogo Enviado) ..> (Fazer Login) : <<include>>
-    (Gerenciar Usuários) ..> (Fazer Login) : <<include>>
-    (Gerenciar Jogos) ..> (Fazer Login) : <<include>>
+    Adm --> caso1
+    Adm --> caso3
+
+    %% Relação "Login é necessário antes de"
+    %% (Seguindo o estilo do seu exemplo)
+    caso1 --> caso2
+    caso1 --> caso3
+    caso1 --> caso4
+    caso1 --> caso5
+    caso1 --> caso6
 ```

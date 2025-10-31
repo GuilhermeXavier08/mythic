@@ -44,17 +44,17 @@ Desenvolvimento de uma aplicação web com possibilidade de jogar e socializar c
 graph TD
     A[Começo] --> B[Desenvolvedor faz login]
     B --> C[Desenvolvedor envia o jogo]
-    C --> D[Jogo com status="pendente"]
+    C --> D[Jogo com status=&quot;pendente&quot;]
     D --> E[Administrador analisa o jogo]
     E --> F{Decisão}
     
     %% Lado "Sim" (Fluxo do Usuário)
-    F -- Sim --> G[Jogo com status="aprovado"]
+    F -- Sim --> G[Jogo com status=&quot;aprovado&quot;]
     G --> H[Usuário faz login]
     H --> I[Usuário visualiza jogos]
     I --> J[Usuário escolhe e realiza a compra]
     J --> K[Sistema adiciona jogo a biblioteca do usuário]
-    K --> L[Usuário baixa e joga]
+    K --> L[Usuário joga]
     L --> M(Fim)
     
     %% Lado "Não"
@@ -89,7 +89,6 @@ classDiagram
         +cadastrarConta()
         +fazerLogin()
         +visualizarBiblioteca()
-        +baixarJogo(jogo: Jogo)
     }
 
     class Biblioteca {
@@ -130,7 +129,7 @@ graph TD
         caso3([Analisar Jogo])
         caso4([Visualizar Jogos])
         caso5([Comprar Jogo])
-        caso6([Baixar e Jogar])
+        caso6([Jogar])
     end
 
     Dev([Desenvolvedor])

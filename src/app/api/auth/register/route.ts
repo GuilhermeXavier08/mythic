@@ -10,19 +10,16 @@ import { prisma } from '@/lib/prisma';
 // Esta função gera um código e verifica se ele já existe no banco
 async function generateUniqueFriendCode(): Promise<number> {
   let code: number;
-  let existingUser = true;
-
-  while (existingUser) {
+  // Loop until we find a code that isn't used
+  while (true) {
     // Gera um número aleatório entre 100.000.000 e 999.999.999
     code = Math.floor(100_000_000 + Math.random() * 900_000_000);
-    
+
     // Verifica se algum usuário já tem esse código
-    existingUser = await prisma.user.findUnique({
-      where: { friendCode: code },
-    });
+    const existingUser = await prisma.user.findUnique({ where: { friendCode: code } });
+    if (!existingUser) break;
   }
-  
-  // @ts-ignore
+
   return code; // Retorna o código único
 }
 // --- FIM DA FUNÇÃO HELPER ---

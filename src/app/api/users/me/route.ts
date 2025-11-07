@@ -41,7 +41,10 @@ export async function GET(request: Request) {
     return NextResponse.json(user, { status: 200 });
 
   } catch (error) {
-    console.error("ERRO NA API /ME:", error);
-    return NextResponse.json({ error: 'Token inválido ou expirado' }, { status: 401 });
+    console.error("[DEBUG] Erro de autenticação:", error);
+    if (error instanceof jwt.TokenExpiredError) {
+      return NextResponse.json({ error: 'Sua sessão expirou. Por favor, faça login novamente.' }, { status: 401 });
+    }
+    return NextResponse.json({ error: 'Token inválido. Por favor, faça login novamente.' }, { status: 401 });
   }
 }

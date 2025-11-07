@@ -17,9 +17,17 @@ export async function GET(request: Request) {
     const users = await prisma.user.findMany({
       where: {
         OR: [
-          // Busca por username
-          // --- CORREÇÃO AQUI: A linha 'mode: "insensitive"' foi removida ---
-          { username: { contains: query } },
+          // Busca por username (case insensitive)
+          { 
+            OR: [
+              { username: { equals: query } },
+              { username: { equals: query.toLowerCase() } },
+              { username: { equals: query.toUpperCase() } },
+              { username: { contains: query } },
+              { username: { contains: query.toLowerCase() } },
+              { username: { contains: query.toUpperCase() } }
+            ]
+          },
           
           // Se for um número, busca também pelo friendCode
           ...(isNumber ? [{ friendCode: queryAsNumber }] : []),

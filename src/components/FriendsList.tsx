@@ -1,13 +1,51 @@
-// src/components/FriendsList.tsx
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
 import styles from './FriendsList.module.css';
 import { FaUserCircle } from 'react-icons/fa';
 
+interface Friend {
+  id: string;
+  username: string;
+  friendCode: number;
+}
+
 export default function FriendsList() {
-  // No futuro, faremos um fetch na API /api/friends para pegar a lista
-  const friends = [
-    { id: '1', username: 'Amigo_Exemplo_1', status: 'Online' },
-    { id: '2', username: 'Amigo_Exemplo_2', status: 'Offline' },
-  ];
+  const { token } = useAuth();
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFriends = async () => {
+      try {
+        const response = await fetch('/api/friends/list', {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        });
+        if (!response.ok) {
+          throw new Error('Falha ao carregar amigos');
+        }
+        const data = (await response.json()) as Friend[];
+        setFriends(data || []);
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        setError(message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFriends();
+  }, [token]);
+
+  if (loading) {
+    return <div className={styles.message}>Carregando amigos...</div>;
+  }
+
+  if (error) {
+    return <div className={styles.error}>{error}</div>;
+  }
 
   return (
     <div className={styles.container}>
@@ -20,12 +58,9 @@ export default function FriendsList() {
               <FaUserCircle size={40} className={styles.friendIcon} />
               <div className={styles.friendDetails}>
                 <span className={styles.friendUsername}>{friend.username}</span>
-                <span className={`${styles.status} ${friend.status === 'Online' ? styles.online : styles.offline}`}>
-                  {friend.status}
-                </span>
+                <span className={styles.friendCode}>ID: {friend.friendCode}</span>
               </div>
             </div>
-            {/* TODO: Adicionar botões (remover, ver perfil, etc) */}
           </div>
         ))
       )}

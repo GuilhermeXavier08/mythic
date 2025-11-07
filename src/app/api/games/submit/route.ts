@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta';
 
 export async function POST(request: Request) {

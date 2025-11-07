@@ -1,13 +1,13 @@
 // src/app/api/admin/games/[gameId]/route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdmin } from '@/lib/adminAuth';
 
 // PATCH (Atualiza o status de um jogo)
-export async function PATCH(
-  request: Request,
-  { params }: { params: { gameId: string } }
-) {
+export async function PATCH(request: Request, ctx: any) {
+  const { params } = ctx as { params: { gameId: string } };
   try {
     // 1. Verifica se é Admin
     await verifyAdmin(request);

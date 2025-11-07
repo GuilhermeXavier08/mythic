@@ -2,14 +2,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 import styles from './page.module.css';
-import AddFriend from '@/components/AddFriend';
-import FriendsList from '@/components/FriendsList';
-import { FaUserCircle } from 'react-icons/fa'; // Ícone de perfil
-
-// Precisamos instalar a biblioteca de ícones: npm install react-icons
-// Rode 'npm install react-icons' no seu terminal!
+import AddFriend from '../../components/AddFriend';
+import FriendsList from '../../components/FriendsList';
+import PendingRequests from '../../components/PendingRequests';
+import { FaUserCircle } from 'react-icons/fa';
 
 interface CurrentUser {
   id: string;
@@ -19,7 +17,7 @@ interface CurrentUser {
 }
 
 export default function FriendsPage() {
-  const [activeTab, setActiveTab] = useState<'add' | 'list'>('list');
+  const [activeTab, setActiveTab] = useState<'list' | 'add' | 'requests'>('list');
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
@@ -57,7 +55,7 @@ export default function FriendsPage() {
 
   return (
     <main className={styles.page}>
-      {/* Seção do Perfil (como no protótipo) */}
+      {/* Profile Section */}
       <section className={styles.profileSection}>
         <FaUserCircle size={100} className={styles.profileIcon} />
         <h1 className={styles.username}>{currentUser?.username}</h1>
@@ -67,7 +65,7 @@ export default function FriendsPage() {
         </div>
       </section>
 
-      {/* Seção de Abas */}
+      {/* Tabs Section */}
       <section className={styles.tabsSection}>
         <div className={styles.tabHeaders}>
           <button
@@ -82,11 +80,18 @@ export default function FriendsPage() {
           >
             Adicionar Amigo
           </button>
+          <button
+            className={`${styles.tabButton} ${activeTab === 'requests' ? styles.active : ''}`}
+            onClick={() => setActiveTab('requests')}
+          >
+            Solicitações Pendentes
+          </button>
         </div>
 
         <div className={styles.tabContent}>
           {activeTab === 'list' && <FriendsList />}
           {activeTab === 'add' && <AddFriend />}
+          {activeTab === 'requests' && <PendingRequests />}
         </div>
       </section>
     </main>

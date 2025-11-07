@@ -3,6 +3,8 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import styles from './page.module.css';
 
 interface GameDeveloper {

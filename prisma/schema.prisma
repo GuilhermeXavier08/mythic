@@ -9,17 +9,24 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// --- NOVO: Define as funções de usuário ---
+// --- User Roles ---
 enum Role {
   USER
   ADMIN
 }
 
-// --- NOVO: Define os status de um jogo ---
+// --- Game Status ---
 enum GameStatus {
   PENDING   // Pendente de aprovação
   APPROVED  // Aprovado e visível na loja
   REJECTED  // Rejeitado pelo admin
+}
+
+// --- Friend Request Status ---
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
 }
 
 model User {
@@ -31,10 +38,17 @@ model User {
   password  String
   createdAt DateTime   @default(now())
   
-  role      Role       @default(USER) // <-- ADICIONADO (Todo novo usuário é USER)
+  role      Role       @default(USER)
   
+  // Game related relations
   purchases Purchase[]
-  submittedGames Game[] // <-- ADICIONADO (Lista de jogos que este usuário enviou)
+  submittedGames Game[]
+
+  // Friend related relations
+  sentRequests     FriendshipRequest[] @relation("SentRequests")
+  receivedRequests FriendshipRequest[] @relation("ReceivedRequests")
+  friendships1     Friendship[]        @relation("User1Friendships")
+  friendships2     Friendship[]        @relation("User2Friendships")
 }
 
 model Game {
@@ -43,9 +57,7 @@ model Game {
   description String
   price       Float
   imageUrl    String
-  
-  gameUrl     String     @default("") // <-- LinHA CORRIGIDA
-  
+  gameUrl     String     @default("")
   status      GameStatus @default(PENDING)
   
   developerId String
@@ -66,4 +78,30 @@ model Purchase {
   game Game @relation(fields: [gameId], references: [id])
 
   @@unique([userId, gameId])
+}
+
+model FriendshipRequest {
+  id         String        @id @default(cuid())
+  senderId   String
+  sender     User          @relation("SentRequests", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User          @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  status     RequestStatus @default(PENDING)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  @@unique([senderId, receiverId])
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId1   String
+  user1     User     @relation("User1Friendships", fields: [userId1], references: [id])
+  userId2   String
+  user2     User     @relation("User2Friendships", fields: [userId2], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId1, userId2])
+  @@index([userId1])
+  @@index([userId2])
 }

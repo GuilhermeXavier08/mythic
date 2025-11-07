@@ -1,4 +1,6 @@
 // src/app/api/admin/games/route.ts
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyAdmin } from '@/lib/adminAuth';

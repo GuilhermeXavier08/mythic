@@ -20,10 +20,7 @@ Essa força se reflete também no número crescente de estúdios e desenvolvedor
 Eventos como a Brasil Game Show (BGS) — maior feira de games da América Latina, ou a Gamescom Latam, voltado a jogos independentes, e o SBGames, que conecta academia e indústria, demonstram o potencial criativo e inovador do cenário nacional.
 No entanto, a maioria das grandes plataformas continua voltada a estúdios consolidados e jogos de alto custo de produção, deixando pouco espaço para criadores iniciantes.
 
-É justamente nesse contexto que o Mythic se diferencia.
-Sua proposta é democratizar a criação e o acesso aos jogos, oferecendo um ambiente unificado onde desenvolvedores podem publicar, divulgar e testar seus projetos, enquanto jogadores encontram experiências leves, gratuitas e acessíveis diretamente no navegador.
-
-A plataforma também incentivará a interação entre criadores e comunidade, estimulando feedbacks, colaborações e aprendizado coletivo. Assim, o Mythic busca se tornar um ponto de encontro entre o talento independente e o público gamer brasileiro, ajudando a revelar novos nomes e fortalecer o desenvolvimento nacional.
+É justamente nesse contexto que o Mythic se diferencia. Sua proposta é democratizar a criação e o acesso aos jogos, oferecendo um ambiente unificado onde desenvolvedores podem publicar, divulgar e testar seus projetos, enquanto jogadores encontram experiências leves, gratuitas e acessíveis diretamente no navegador. A plataforma também incentivará a interação entre criadores e comunidade, estimulando feedbacks, colaborações e aprendizado coletivo. Assim, o Mythic busca se tornar um ponto de encontro entre o talento independente e o público gamer brasileiro, ajudando a revelar novos nomes e fortalecer o desenvolvimento nacional.
 
 Dessa forma, o Mythic não apenas amplia o acesso a jogos para usuários com hardware limitado, mas também constrói um ecossistema de incentivo à criação nacional, impulsionando a economia criativa e contribuindo para a consolidação do Brasil como um polo relevante no cenário mundial de desenvolvimento de jogos.
 
@@ -52,18 +49,19 @@ Desenvolvimento de uma aplicação web com possibilidade de jogar e socializar c
 - RF05: Oferecer chats com amigos.
 - RF06: Permitir que desenvolvedores enviem seus próprios jogos para análise.
 - RF07: Permitir que o administrador aprove ou recuse jogos enviados.
-- RF08: Disponibilizar jogos aprovados para os usuários jogarem diretamente no navegador.
+- RF08: Disponibilizar jogos aprovados para os usuários jogarem.
 - RF09: Permitir que usuários adicionem jogos à biblioteca pessoal.
 - RF10: Permitir comentários e avaliações em jogos publicados.
 
 ### Requisitos Não Funcionais
+
 - RNF01: O sistema deve ser leve e otimizado para funcionar em computadores de baixo desempenho.
 - RNF02: A plataforma deve ser responsiva, adaptando-se a diferentes tamanhos de tela (PC, tablet e celular).
 - RNF03: O tempo de carregamento das páginas não deve ultrapassar 3 segundos em conexões comuns.
 - RNF04: Os dados de usuários e desenvolvedores devem ser protegidos com autenticação segura e criptografia.
 - RNF05: A interface deve ser intuitiva e de fácil navegação, permitindo que qualquer usuário utilize o sistema sem treinamento prévio.
 
-## Recusos do Projeto
+## Recursos do Projeto
 
 ### Tecnológicos
 - Framework de Desenvolvimento Next/React
@@ -71,28 +69,56 @@ Desenvolvimento de uma aplicação web com possibilidade de jogar e socializar c
 - Banco de Dados: Relacional (MySQL)
 - VScode
 - Figma
+- GitHub Colaborativo
 
 ### Pessoal
 - Equipe de Colaboradores
 
-## Equipe de Desenvolvimento
+## Equipe de Desenvolvimento - Semanal
+
+### Funções da 1 Semana
 
 | Nome | Função |
 |------|--------|
 | João Cardoso | Programador |
-| Guilherme Xavir | Programador |
-| Eduardo Silva Barbosa | Prototipação e Esboço |
+| Guilherme Xavier | Programador |
+| Eduardo Silva | Prototipação, Esboço e Documentação |
 | Enzo Paralupi | Prototipação e Esboço |
 | Kaun Santos | Prototipação e Esboço |
 | Derick Correia | Documentação |
 | Enzo Donizetti | Documentação |
 
-##  Cronograma Resumido (Exemplo)
+### Funções da 2 Semana
+
+| Nome | Função |
+|------|--------|
+| João Cardoso | Programador |
+| Guilherme Xavier | Programador |
+| Eduardo Silva | Prototipação e Documentação |
+| Enzo Paralupi | Prototipação |
+| Kaun Santos | Prototipação |
+| Derick Correia | Documentação |
+| Enzo Donizetti | Documentação |
+
+### Funções da 3 Semana
+
+| Nome | Função |
+|------|--------|
+| João Cardoso | Programador |
+| Guilherme Xavier | Programador |
+| Eduardo Silva | Documentação |
+| Enzo Paralupi | Prototipação |
+| Kaun Santos | Prototipação |
+| Derick Correia | Documentação |
+| Enzo Donizetti | Documentação |
+
+##  Cronograma
+
 | Etapa | Descrição | Duração |
 |-------|------------|----------|
-| Planejamento | Definição do escopo e requisitos | 2 semanas |
-| Design e Protótipos | Criação das telas no Figma | 3 semanas |
-| Desenvolvimento | Implementação do front e back-end | 6 semanas |
+| Planejamento | Definição do escopo e requisitos | 1 semanas |
+| Design e Protótipos | Criação das telas no Figma | 2 semanas |
+| Desenvolvimento | Implementação do front e back-end | 5 semanas |
 | Testes e Correções | Ajustes e otimização de performance | 2 semanas |
 | Entrega Final | Implantação e documentação | 1 semana |
 
@@ -214,12 +240,16 @@ graph TD
     caso1 --> caso6
 ```
 
+# Arquivos
 
-# Figma
+## Figma
 - https://www.figma.com/design/RWTzYGELO0kp2GblTdFi6W/Untitled?node-id=0-1&t=94FZdp9vr8wEpFeC-1
 
+## Trello
+- https://trello.com/invite/b/690dedac74d1dd3f807b48db/ATTIc9d63f3db53ccd9a3bef7fbea038257cC0C23FA6/projeto-de-software-20
 
-# Fontes
+
+# Fontes de Pesquisa
 - https://www.pesquisagamebrasil.com.br
 - https://newzoo.com
 - https://abragames.org

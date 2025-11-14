@@ -16,14 +16,19 @@ interface GameCardProps {
 export default function GameCard({ game }: GameCardProps) {
   return (
     <Link href={`/game/${game.id}`} className={styles.card}>
+      
+      {/* --- CORREÇÃO IMPORTANTE AQUI --- */}
+      {/* Você precisa de 'height' (altura) e 'className' (para o CSS) */}
       <Image
         src={game.imageUrl}
         alt={`Capa do jogo ${game.title}`}
         width={300}
-        height={400} // <-- FALTANDO (para a proporção 3:4)
-        className={styles.image} // <-- FALTANDO (para o CSS)
-        priority // <-- Opcional, mas bom para performance
+        height={400} // Obrigatório para imagens externas
+        className={styles.image} // Obrigatório para o CSS
+        priority
       />
+      {/* --- FIM DA CORREÇÃO --- */}
+
       <div className={styles.content}>
         <h3 className={styles.title}>{game.title}</h3>
         <p className={styles.price}>

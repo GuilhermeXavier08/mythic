@@ -8,10 +8,10 @@ import { useAuth } from '@/context/AuthContext';
 export default function Header() {
   const { user, logout, isAdmin } = useAuth(); // Obtenha 'isAdmin'
   
-  // --- A LINHA QUE FALTAVA ---
-  // Por enquanto, nossa regra é: se o usuário está logado, ele pode enviar jogos.
-  const isDeveloper = user;
-  // --- FIM DA CORREÇÃO ---
+  // --- MUDANÇA DA REGRA AQUI ---
+  // Apenas usuários logados que NÃO são admins podem enviar jogos
+  const isDeveloper = user && !isAdmin;
+  // --- FIM DA MUDANÇA ---
 
   return (
     <header className={styles.header}>
@@ -39,7 +39,7 @@ export default function Header() {
         <div className={styles.authSection}>
           {user ? (
             <>
-              {/* Agora a variável 'isDeveloper' existe e o erro vai sumir */}
+              {/* Esta condição agora está correta */}
               {isDeveloper && (
                  <Link href="/submit-game" className={styles.submitButton}>
                    Enviar Jogo

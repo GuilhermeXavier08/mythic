@@ -1,21 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true, // Você pode ter outras configs aqui
+  reactStrictMode: true,
 
-  // --- ADICIONE ESTE BLOCO ---
+  // --- SUBSTITUA SEU BLOCO 'images' POR ESTE ---
   images: {
     remotePatterns: [
       {
-        protocol: 'https',
-        hostname: 'via.placeholder.com',
+        // Permite qualquer imagem de qualquer site HTTP
+        protocol: 'http',
+        hostname: '**', // O '**' é um wildcard para "qualquer hostname"
       },
-      { // --- ADICIONE ESTE BLOCO NOVO ---
+      {
+        // Permite qualquer imagem de qualquer site HTTPS
         protocol: 'https',
-        hostname: 'placehold.co',
+        hostname: '**',
       },
     ],
   },
-  // --- FIM DO BLOCO ---
+  // --- FIM DA SUBSTITUIÇÃO ---
 };
 
 module.exports = nextConfig;

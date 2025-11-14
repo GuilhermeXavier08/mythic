@@ -4,14 +4,18 @@
 import Link from 'next/link';
 import styles from './Header.module.css';
 import { useAuth } from '@/context/AuthContext';
+import { FaUserCircle, FaTimes } from 'react-icons/fa';
+import { useState } from 'react';
 
 export default function Header() {
-  const { user, logout, isAdmin } = useAuth(); // Obtenha 'isAdmin'
-  
-  // --- MUDANÇA DA REGRA AQUI ---
-  // Apenas usuários logados que NÃO são admins podem enviar jogos
+  const { user, logout, isAdmin } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   const isDeveloper = user && !isAdmin;
-  // --- FIM DA MUDANÇA ---
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   return (
     <header className={styles.header}>
@@ -39,23 +43,52 @@ export default function Header() {
         <div className={styles.authSection}>
           {user ? (
             <>
-              {/* Esta condição agora está correta */}
               {isDeveloper && (
-                 <Link href="/submit-game" className={styles.submitButton}>
-                   Enviar Jogo
-                 </Link>
+                <Link href="/submit-game" className={styles.submitButton}>
+                  Enviar Jogo
+                </Link>
               )}
-              
+
               {isAdmin && (
                 <Link href="/admin/dashboard" className={styles.adminButton}>
                   Admin
                 </Link>
               )}
 
-              <span className={styles.username}>Bem-vindo, {user.username}</span>
-              <button onClick={logout} className={styles.logoutButton}>
-                Sair
-              </button>
+              {/* Menu Hamburger/Perfil */}
+              <div className={styles.userMenu}>
+                <button onClick={toggleMenu} className={styles.menuToggleButton}>
+                  <FaUserCircle size={24} />
+                </button>
+
+                {isMenuOpen && (
+                  <div className={styles.dropdownMenu}>
+                    <Link
+                      href={`/profile/${user.username}`}
+                      onClick={toggleMenu}
+                      className={styles.menuItem}
+                    >
+                      Perfil
+                    </Link>
+                    <Link
+                      href="/settings"
+                      onClick={toggleMenu}
+                      className={styles.menuItem}
+                    >
+                      Configurações
+                    </Link>
+                    <button
+                      onClick={() => {
+                        logout();
+                        toggleMenu();
+                      }}
+                      className={`${styles.menuItem} ${styles.logoutButton}`}
+                    >
+                      Sair
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           ) : (
             <Link href="/login" className={styles.loginButton}>

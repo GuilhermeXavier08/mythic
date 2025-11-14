@@ -1,0 +1,120 @@
+/* src/app/profile/[username]/Profile.module.css */
+
+.container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: calc(100vh - 200px);
+}
+
+.profileHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 3rem 2rem;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border-radius: 12px;
+  margin-bottom: 2rem;
+  border: 1px solid #333333;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.profileHeader::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+}
+
+.avatar {
+  color: var(--secondary-color);
+  width: 120px;
+  height: 120px;
+  border: 3px solid var(--secondary-color);
+  border-radius: 50%;
+  padding: 10px;
+  background-color: rgba(76, 175, 80, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.3);
+}
+
+.username {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.friendCode {
+  font-size: 1rem;
+  color: var(--secondary-color);
+  font-weight: 600;
+  background-color: rgba(76, 175, 80, 0.15);
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  border: 1px solid var(--secondary-color);
+}
+
+.joinDate {
+  font-size: 0.95rem;
+  color: #a7a7a7;
+  margin: 0;
+  font-weight: 500;
+}
+
+.profileActions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.profileContent {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  padding: 2.5rem 2rem;
+  border-radius: 12px;
+  border: 1px solid #333333;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.profileContent h2 {
+  font-size: 1.8rem;
+  color: #ffffff;
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profileContent h2::before {
+  content: '';
+  width: 4px;
+  height: 24px;
+  background: var(--secondary-color);
+  border-radius: 2px;
+}
+
+.placeholder {
+  color: #a7a7a7;
+  text-align: center;
+  padding: 3rem 1rem;
+  background-color: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  border: 1px dashed #444444;
+  font-size: 1.1rem;
+}

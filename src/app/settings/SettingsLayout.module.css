@@ -1,0 +1,22 @@
+.container {
+  max-width: 1400px; /* Aumentado para mais espaço */
+  margin: 20px auto;
+  padding: 20px;
+  background-color: #1e1e1e; /* Fundo escuro da página */
+  border-radius: 8px;
+}
+
+.container h1 {
+  margin-bottom: 24px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 16px;
+}
+
+.layout {
+  display: flex;
+  gap: 30px; /* Espaço entre o menu (nav) e o conteúdo (content) */
+}
+
+.content {
+  flex: 1; /* Faz o conteúdo ocupar o espaço restante */
+}

@@ -69,35 +69,73 @@ export async function POST(request: Request) {
   // então fazemos uma cast local controlado.
   const db = prisma as any;
 
-  const existingFriendship = await db.friendship.findFirst({
-      where: {
-        OR: [
-          { AND: [{ userId1: decoded.userId }, { userId2: targetUser.id }] },
-          { AND: [{ userId1: targetUser.id }, { userId2: decoded.userId }] },
-        ],
-      },
-    });
+  // 1. Ordena os IDs para checar a tabela Friendship corretamente
+  const [userA, userB] = [decoded.userId, targetUser.id].sort();
 
-    if (existingFriendship) {
-      return NextResponse.json({ error: "Você já é amigo deste usuário" }, { status: 409 });
+  const existingFriendship = await db.friendship.findUnique({
+    where: {
+      userId1_userId2: {
+        userId1: userA,
+        userId2: userB,
+      },
+    },
+  });
+
+  if (existingFriendship) {
+    return NextResponse.json({ error: "Você já é amigo deste usuário" }, { status: 409 });
+  }
+
+  // 2. Verificar por QUALQUER pedido PENDENTE em ambas as direções (A->B ou B->A)
+  const existingPendingRequest = await db.friendshipRequest.findFirst({
+    where: {
+      status: 'PENDING',
+      OR: [
+        // Opção 1: O pedido já existe e foi enviado por mim (remetente -> alvo)
+        { senderId: decoded.userId, receiverId: targetUser.id },
+        // Opção 2: O pedido já existe e foi enviado pelo alvo para mim (alvo -> remetente)
+        { senderId: targetUser.id, receiverId: decoded.userId },
+      ],
+    },
+  });
+
+  // 3. Lidar com o pedido existente
+  if (existingPendingRequest) {
+    // Se o pedido foi enviado POR MIM (Opção 1)
+    if (existingPendingRequest.senderId === decoded.userId) {
+      return NextResponse.json(
+        { error: "Você já enviou um pedido de amizade para este usuário." },
+        { status: 409 }
+      );
     }
 
-    // Check for existing pending request
-  const existingRequest = await db.friendshipRequest.findFirst({
-      where: {
-        OR: [
-          { AND: [{ senderId: decoded.userId }, { receiverId: targetUser.id }, { status: 'PENDING' }] },
-          { AND: [{ senderId: targetUser.id }, { receiverId: decoded.userId }, { status: 'PENDING' }] },
-        ],
-      },
-    });
-
-    if (existingRequest) {
-      return NextResponse.json({ error: "Já existe uma solicitação de amizade pendente com este usuário" }, { status: 409 });
+    // Se o pedido foi enviado PELO ALVO (Opção 2)
+    if (existingPendingRequest.senderId === targetUser.id) {
+      return NextResponse.json(
+        { error: "Este usuário já te enviou um pedido. Verifique seus pedidos recebidos." },
+        { status: 409 }
+      );
     }
+  }
 
-    // Create new friend request
-  const friendRequest = await db.friendshipRequest.create({ data: { senderId: decoded.userId, receiverId: targetUser.id } });
+  // 4. Limpar quaisquer pedidos antigos que terminaram em aceito/rejeitado
+  // Isso permite re-adicionar após remover um amigo
+  await db.friendshipRequest.deleteMany({
+    where: {
+      OR: [
+        { senderId: decoded.userId, receiverId: targetUser.id },
+        { senderId: targetUser.id, receiverId: decoded.userId },
+      ],
+      status: { in: ['ACCEPTED', 'REJECTED'] },
+    },
+  });
+
+  // 5. Criar novo pedido de amizade (agora com segurança)
+  const friendRequest = await db.friendshipRequest.create({
+    data: {
+      senderId: decoded.userId,
+      receiverId: targetUser.id,
+    },
+  });
 
     return NextResponse.json(friendRequest, { status: 201 });
   } catch (error: unknown) {

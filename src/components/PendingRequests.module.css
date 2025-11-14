@@ -16,7 +16,7 @@
 
 .title {
   margin-bottom: 1rem;
-  color: #333;
+  color: #ffffff;
 }
 
 .requestItem {
@@ -25,9 +25,8 @@
   align-items: center;
   padding: 1rem;
   margin-bottom: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background-color: #fff;
+  background-color: #353535;
+  border-radius: 6px;
 }
 
 .userInfo {
@@ -37,7 +36,7 @@
 }
 
 .userIcon {
-  color: #666;
+  color: #8b8b8b;
 }
 
 .userDetails {
@@ -47,12 +46,12 @@
 
 .username {
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
 }
 
 .friendCode {
   font-size: 0.9em;
-  color: #666;
+  color: #8b8b8b;
 }
 
 .actions {

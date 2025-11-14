@@ -97,3 +97,29 @@
 .addButton:hover {
   background-color: #FFFFFF;
 }
+
+.removeButton {
+  padding: 0.5rem 1rem;
+  background-color: #ff6b6b;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.removeButton:hover {
+  background-color: #ff5252;
+}
+
+.pendingButton {
+  padding: 0.5rem 1rem;
+  background-color: #a7a7a7;
+  color: #2a2a2a;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: not-allowed;
+  opacity: 0.7;
+}

@@ -17,27 +17,61 @@ export default function FriendsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchFriends = async () => {
-      try {
-        const response = await fetch('/api/friends/list', {
-          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        });
-        if (!response.ok) {
-          throw new Error('Falha ao carregar amigos');
-        }
-        const data = (await response.json()) as Friend[];
-        setFriends(data || []);
-      } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        setError(message);
-      } finally {
-        setLoading(false);
+  // Função para buscar amigos (refatorada para ser reutilizável)
+  const fetchFriends = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/friends/list', {
+        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      });
+      if (!response.ok) {
+        throw new Error('Falha ao carregar amigos');
       }
-    };
+      const data = (await response.json()) as Friend[];
+      setFriends(data || []);
+      setError(null);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchFriends();
+  useEffect(() => {
+    if (token) {
+      fetchFriends();
+    }
   }, [token]);
+
+  // Função para remover amigo
+  const handleRemoveFriend = async (friendId: string, friendUsername: string) => {
+    if (!window.confirm(`Tem certeza que deseja remover ${friendUsername} da sua lista de amigos?`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/friends/${friendId}`, {
+        method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha ao remover amigo.');
+      }
+
+      // Atualiza a lista removendo o amigo ou refazendo a busca
+      await fetchFriends();
+      alert(`${friendUsername} foi removido com sucesso.`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      setError(message);
+      setLoading(false);
+    }
+  };
 
   if (loading) {
     return <div className={styles.message}>Carregando amigos...</div>;
@@ -61,6 +95,13 @@ export default function FriendsList() {
                 <span className={styles.friendCode}>ID: {friend.friendCode}</span>
               </div>
             </div>
+            <button
+              className={styles.removeButton}
+              onClick={() => handleRemoveFriend(friend.id, friend.username)}
+              disabled={loading}
+            >
+              Remover
+            </button>
           </div>
         ))
       )}

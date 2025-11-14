@@ -11,6 +11,15 @@
   padding: 1rem;
 }
 
+.error {
+  text-align: center;
+  color: #ff6b6b;
+  padding: 1rem;
+  background-color: #2a1515;
+  border-radius: 6px;
+  border: 1px solid #ff6b6b;
+}
+
 .friendItem {
   display: flex;
   align-items: center;
@@ -27,18 +36,24 @@
 }
 
 .friendIcon {
-  color: #a7a7a7;
+  color: #8b8b8b;
 }
 
 .friendDetails {
   display: flex;
   flex-direction: column;
+  color: #8b8b8b;
 }
 
 .friendUsername {
   font-size: 1.1rem;
   font-weight: 600;
   color: #FFFFFF;
+}
+
+.friendCode {
+  font-size: 0.9rem;
+  color: #a7a7a7;
 }
 
 .status {
@@ -51,4 +66,24 @@
 
 .offline {
   color: #a7a7a7;
+}
+
+.removeButton {
+  padding: 0.5rem 1rem;
+  background-color: #ff6b6b;
+  color: #FFFFFF;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.removeButton:hover {
+  background-color: #ff5252;
+}
+
+.removeButton:disabled {
+  background-color: #a7a7a7;
+  cursor: not-allowed;
 }

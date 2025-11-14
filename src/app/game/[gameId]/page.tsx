@@ -14,7 +14,7 @@ interface GameDetails {
   description: string;
   price: number;
   imageUrl: string;
-  gameUrl: string; // Usaremos este no próximo passo
+  gameUrl: string;
   developer: {
     username: string;
   };

@@ -1,0 +1,55 @@
+/* src/components/FriendButton.module.css */
+
+.container {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.addButton,
+.removeButton,
+.pendingButton {
+  padding: 0.8rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.addButton {
+  background-color: var(--secondary-color);
+  color: #2a2a2a;
+}
+
+.addButton:hover:not(:disabled) {
+  background-color: #ffffff;
+  transform: translateY(-2px);
+}
+
+.addButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.removeButton {
+  background-color: #ff6b6b;
+  color: #ffffff;
+}
+
+.removeButton:hover:not(:disabled) {
+  background-color: #ff5252;
+  transform: translateY(-2px);
+}
+
+.removeButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pendingButton {
+  background-color: #a7a7a7;
+  color: #2a2a2a;
+  cursor: not-allowed;
+  opacity: 0.7;
+}

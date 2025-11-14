@@ -1,0 +1,81 @@
+.profileHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.6rem 1rem;
+  text-align: center;
+}
+
+.avatarWrap {
+  width: 128px;
+  height: 128px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 30% 20%, rgba(76,175,80,0.12), transparent 40%);
+  border: 3px solid rgba(76,175,80,0.15);
+}
+
+.avatar {
+  width: 96px;
+  height: 96px;
+  color: var(--secondary-color);
+}
+
+.username {
+  font-size: 1.8rem;
+  color: #fff;
+  margin: 0;
+  font-weight: 700;
+}
+
+.meta {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.friendCode {
+  color: var(--secondary-color);
+  font-weight: 600;
+  background-color: rgba(76,175,80,0.08);
+  padding: 0.35rem 0.75rem;
+  border-radius: 18px;
+  border: 1px solid rgba(76,175,80,0.12);
+}
+
+.actions {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.actionButton {
+  padding: 0.6rem 1rem;
+  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.removeButton {
+  padding: 0.55rem 0.9rem;
+  background: #ff6b6b;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pendingButton {
+  padding: 0.55rem 0.9rem;
+  background: #a7a7a7;
+  color: #222;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+}

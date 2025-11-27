@@ -9,6 +9,8 @@ interface ProfileData {
   username: string;
   friendCode: number;
   createdAt: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
 }
 
 async function getProfileData(username: string): Promise<ProfileData | null> {

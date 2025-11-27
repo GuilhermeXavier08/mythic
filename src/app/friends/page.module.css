@@ -35,6 +35,39 @@
   margin-bottom: 1rem;
 }
 
+.profileAvatar {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 1rem;
+  border: 3px solid var(--secondary-color, #a259ff);
+}
+
+/* Aliases / Large avatar styles for central display */
+.myAvatarWrapperLarge {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border: 4px solid var(--secondary-color, #a259ff);
+}
+
+.myAvatarImageLarge {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 50%;
+}
+
+.defaultMyIconLarge {
+  width: 100%;
+  height: 100%;
+  color: #a7a7a7;
+}
+
 .username {
   font-size: 2rem;
   font-weight: 600;

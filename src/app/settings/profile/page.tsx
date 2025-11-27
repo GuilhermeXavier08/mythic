@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import styles from './ProfileSettings.module.css';
 import { FaUserCircle, FaCamera } from 'react-icons/fa';
@@ -20,6 +20,16 @@ export default function ProfileSettingsPage() {
 
   const avatarUrl = (user && (user as any).avatarUrl) || null;
   const previewUrl = avatarFile ? URL.createObjectURL(avatarFile) : avatarUrl;
+
+  // Debug: observe when the user context changes and sync local state
+  useEffect(() => {
+    console.log('ProfileSettingsPage: user context changed:', user);
+    if (user) {
+      setUsername(user.username || '');
+      setEmail(user.email || '');
+      setBio((user as any).bio || '');
+    }
+  }, [user]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -61,9 +71,14 @@ export default function ProfileSettingsPage() {
       }
 
       if (updateUser) {
-        try { updateUser(data.user); } catch {}
+        // Atualiza o contexto global do usuário — não silenciamos erros aqui
+        updateUser(data.user);
       }
 
+      // Também atualiza os estados locais para refletir imediatamente as mudanças
+      setUsername(data.user?.username || username);
+      setEmail(data.user?.email || email);
+      setBio(data.user?.bio || bio);
       setAvatarFile(null);
       setMessage('Perfil atualizado com sucesso!');
     } catch (err: unknown) {

@@ -38,15 +38,15 @@ export async function GET(request: Request) {
           ],
         },
         include: {
-          user1: { select: { id: true, username: true, friendCode: true } },
-          user2: { select: { id: true, username: true, friendCode: true } },
+          user1: { select: { id: true, username: true, friendCode: true, avatarUrl: true } },
+          user2: { select: { id: true, username: true, friendCode: true, avatarUrl: true } },
         },
       });
 
       // Transform the data to return only the friend's information
       return friendships.map((friendship: any) => {
         const friend = friendship.userId1 === decoded.userId ? friendship.user2 : friendship.user1;
-        return { id: friend.id, username: friend.username, friendCode: friend.friendCode, friendshipId: friendship.id };
+        return { id: friend.id, username: friend.username, friendCode: friend.friendCode, avatarUrl: friend.avatarUrl || null, friendshipId: friendship.id };
       });
     });
 

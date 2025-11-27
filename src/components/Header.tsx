@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import styles from './Header.module.css';
 import { useAuth } from '@/context/AuthContext';
-import { FaUserCircle, FaTimes } from 'react-icons/fa';
+import { FaUserCircle } from 'react-icons/fa';
 import { useState } from 'react';
 
 export default function Header() {
@@ -57,8 +57,15 @@ export default function Header() {
 
               {/* Menu Hamburger/Perfil */}
               <div className={styles.userMenu}>
-                <button onClick={toggleMenu} className={styles.menuToggleButton}>
-                  <FaUserCircle size={24} />
+                <button onClick={toggleMenu} className={styles.menuToggleButton} aria-label="Abrir menu de usuário">
+                  <div className={styles.avatarNavWrapper}>
+                    {user?.avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={user.avatarUrl} alt={`${user.username}'s avatar`} className={styles.avatarImage} />
+                    ) : (
+                      <FaUserCircle size={24} className={styles.defaultAvatarIcon} />
+                    )}
+                  </div>
                 </button>
 
                 {isMenuOpen && (

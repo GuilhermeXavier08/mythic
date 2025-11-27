@@ -10,6 +10,8 @@ interface ProfileData {
   id: string;
   username: string;
   friendCode: number;
+  bio?: string | null;
+  avatarUrl?: string | null;
 }
 
 type FriendshipStatus = 'SELF' | 'FRIENDS' | 'PENDING' | 'NOT_FRIENDS';
@@ -107,9 +109,15 @@ export default function ProfileHeader({ profileData }: { profileData: ProfileDat
   return (
     <div className={styles.profileHeader}>
       <div className={styles.avatarWrap}>
-        <FaUserCircle className={styles.avatar} />
+        {profileData.avatarUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={profileData.avatarUrl} alt={`${profileData.username} avatar`} className={styles.avatarImage} />
+        ) : (
+          <FaUserCircle className={styles.avatar} />
+        )}
       </div>
       <h1 className={styles.username}>{profileData.username}</h1>
+      {profileData.bio ? <p className={styles.bio}>{profileData.bio}</p> : null}
       <div className={styles.meta}>
         <span className={styles.friendCode}>ID: {profileData.friendCode}</span>
       </div>

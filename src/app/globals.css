@@ -31,3 +31,30 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* ... (seus estilos anteriores, :root, etc.) ... */
+
+/* Adicione isso no final */
+html,
+body,
+#__next {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+/* Classe que vamos adicionar ao <main> no layout.tsx */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Esta é a regra mais importante */
+  padding: 2rem;
+  width: 100%;
+}

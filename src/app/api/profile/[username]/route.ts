@@ -17,7 +17,7 @@ export async function GET(
       );
     }
 
-    // Buscar usuário por username
+    // Buscar usuário por username (inclui bio e avatarUrl para exibição pública)
     const user = await prisma.user.findUnique({
       where: { username },
       select: {
@@ -25,6 +25,8 @@ export async function GET(
         username: true,
         friendCode: true,
         createdAt: true,
+        bio: true,
+        avatarUrl: true,
       },
     });
 

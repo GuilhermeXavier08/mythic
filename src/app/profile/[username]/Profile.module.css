@@ -101,6 +101,30 @@
   gap: 0.5rem;
 }
 
+.bioSection {
+  text-align: left;
+  /* Limit width and center the bio block */
+  max-width: 700px;
+  margin: 20px auto 24px auto;
+  padding: 1.25rem 1rem;
+  background: rgba(255,255,255,0.02);
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.bioText {
+  color: #dcdcdc;
+  line-height: 1.5;
+  margin: 0;
+  /* Ensure long text wraps and preserves user line breaks */
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  /* Force breaks for very long continuous strings */
+  word-break: break-all;
+  white-space: pre-wrap;
+  display: block;
+}
+
 .profileContent h2::before {
   content: '';
   width: 4px;

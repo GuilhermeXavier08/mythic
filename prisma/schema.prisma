@@ -30,17 +30,18 @@ enum RequestStatus {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  name       String?
-  username   String   @unique
-  friendCode Int      @unique
-  bio        String?
-  password   String
-  createdAt  DateTime @default(now())
-
-  role Role @default(USER)
-
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String?
+  username  String     @unique
+  friendCode Int       @unique
+  bio       String? // A interrogação '?' permite que seja nulo
+  avatarUrl String? // A interrogação '?' permite que seja nulo
+  password  String
+  createdAt DateTime   @default(now())
+  
+  role      Role       @default(USER)
+  
   // Game related relations
   purchases      Purchase[]
   submittedGames Game[]

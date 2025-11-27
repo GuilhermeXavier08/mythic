@@ -24,6 +24,29 @@
   color: var(--secondary-color);
 }
 
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  display: block;
+}
+
+.bio {
+  max-width: 700px;
+  color: #cfcfcf;
+  font-size: 0.98rem;
+  margin: 0.4rem 0 0.6rem 0;
+  line-height: 1.4;
+  /* Ensure the bio block is centered and wraps long strings */
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  word-break: break-all; /* aggressive break for long, continuous strings */
+  overflow-wrap: break-word;
+  white-space: normal;
+}
+
 .username {
   font-size: 1.8rem;
   color: #fff;

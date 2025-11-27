@@ -9,6 +9,7 @@ interface Friend {
   id: string;
   username: string;
   friendCode: number;
+  avatarUrl?: string | null;
 }
 
 export default function FriendsList() {
@@ -89,7 +90,18 @@ export default function FriendsList() {
         friends.map(friend => (
           <div key={friend.id} className={styles.friendItem}>
             <div className={styles.friendInfo}>
-              <FaUserCircle size={40} className={styles.friendIcon} />
+              <div className={styles.friendAvatarWrapper}>
+                {friend.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={friend.avatarUrl}
+                    alt={`${friend.username}'s avatar`}
+                    className={styles.friendAvatarImage}
+                  />
+                ) : (
+                  <FaUserCircle size={40} className={styles.friendIcon} />
+                )}
+              </div>
               <div className={styles.friendDetails}>
                 <span className={styles.friendUsername}>{friend.username}</span>
                 <span className={styles.friendCode}>ID: {friend.friendCode}</span>

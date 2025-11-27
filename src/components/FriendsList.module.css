@@ -39,6 +39,21 @@
   color: #8b8b8b;
 }
 
+.friendAvatarWrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-block;
+}
+
+.friendAvatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
 .friendDetails {
   display: flex;
   flex-direction: column;

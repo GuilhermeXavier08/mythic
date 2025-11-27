@@ -43,8 +43,9 @@ model User {
   role      Role       @default(USER)
   
   // Game related relations
-  purchases Purchase[]
+  purchases      Purchase[]
   submittedGames Game[]
+  cart           Cart? // <-- ADICIONADO (O User tem um Cart)
 
   // Friend related relations
   sentRequests     FriendshipRequest[] @relation("SentRequests")
@@ -54,19 +55,20 @@ model User {
 }
 
 model Game {
-  id          String     @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String
   price       Float
   imageUrl    String
-  gameUrl     String     @default("")
+  gameUrl     String   @default("")
   status      GameStatus @default(PENDING)
-  
+
   developerId String
   developer   User     @relation(fields: [developerId], references: [id])
 
-  purchases   Purchase[]
-  
+  purchases Purchase[]
+  cartItems CartItem[] // <-- ADICIONADO (O Game está em vários CartItems)
+
   @@unique([developerId, title])
 }
 
@@ -80,6 +82,27 @@ model Purchase {
   game Game @relation(fields: [gameId], references: [id])
 
   @@unique([userId, gameId])
+}
+
+// NOVO MODELO: O carrinho de um usuário
+model Cart {
+  id     String     @id @default(cuid())
+  userId String     @unique // Cada usuário tem APENAS UM carrinho
+  user   User       @relation(fields: [userId], references: [id])
+  items  CartItem[] // Lista de itens no carrinho
+}
+
+// NOVO MODELO: Um item dentro do carrinho
+model CartItem {
+  id     String   @id @default(cuid())
+  cartId String
+  cart   Cart     @relation(fields: [cartId], references: [id])
+  gameId String
+  game   Game     @relation(fields: [gameId], references: [id])
+  addedAt DateTime @default(now())
+
+  // Garante que o mesmo jogo não possa ser adicionado duas vezes no mesmo carrinho
+  @@unique([cartId, gameId])
 }
 
 model FriendshipRequest {

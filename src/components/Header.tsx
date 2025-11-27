@@ -7,8 +7,14 @@ import { useAuth } from '@/context/AuthContext';
 import { FaUserCircle } from 'react-icons/fa';
 import { useState } from 'react';
 
+// --- ADICIONADO DE VOLTA ---
+import { useCart } from '@/context/CartContext';
+import CartIcon from './CartIcon';
+// --- FIM DA ADIÇÃO ---
+
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
+  const { itemCount } = useCart(); // <-- ADICIONADO DE VOLTA
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const isDeveloper = user && !isAdmin;
@@ -20,7 +26,7 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.container}>
-        <div className={styles.leftSection}>
+        <div className={styles.leftSection}>{/* ... (Logo e Nav Links) ... */}
           <Link href="/" className={styles.logo}>
             Mythic
           </Link>
@@ -54,6 +60,15 @@ export default function Header() {
                   Admin
                 </Link>
               )}
+
+              {/* --- ÍCONE DO CARRINHO ADICIONADO AQUI --- */}
+              <Link href="/cart" className={styles.cartLink}>
+                <CartIcon />
+                {itemCount > 0 && (
+                  <span className={styles.cartCount}>{itemCount}</span>
+                )}
+              </Link>
+              {/* --- FIM DA ADIÇÃO --- */}
 
               {/* Menu Hamburger/Perfil */}
               <div className={styles.userMenu}>
@@ -98,9 +113,17 @@ export default function Header() {
               </div>
             </>
           ) : (
-            <Link href="/login" className={styles.loginButton}>
-              Login
-            </Link>
+            <> {/* --- SEÇÃO DESLOGADO --- */}
+              <Link href="/login" className={styles.loginButton}>
+                Login
+              </Link>
+              
+              {/* --- ÍCONE DO CARRINHO ADICIONADO AQUI --- */}
+              <Link href="/cart" className={styles.cartLink}>
+                <CartIcon />
+              </Link>
+              {/* --- FIM DA ADIÇÃO --- */}
+            </>
           )}
         </div>
       </div>

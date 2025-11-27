@@ -1,0 +1,53 @@
+/* src/components/LibraryGameItem.module.css */
+.row {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #e0e0e0;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #353535;
+}
+
+.row:hover {
+  background-color: #353535;
+}
+
+.imageWrapper {
+  width: 60px;
+  height: 80px;
+  flex-shrink: 0; /* Impede que a imagem encolha */
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.info {
+  flex-grow: 1;
+  margin-left: 1rem;
+}
+
+.title {
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.action {
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: var(--primary-color);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--primary-color);
+}
+
+.row:hover .action {
+  background-color: var(--primary-color);
+  color: #fff;
+}

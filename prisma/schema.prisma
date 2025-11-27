@@ -35,7 +35,8 @@ model User {
   name      String?
   username  String     @unique
   friendCode Int       @unique
-  bio              String?
+  bio       String? // A interrogação '?' permite que seja nulo
+  avatarUrl String? // A interrogação '?' permite que seja nulo
   password  String
   createdAt DateTime   @default(now())
   

@@ -1,0 +1,80 @@
+/* src/app/play/[gameId]/page.module.css */
+.page {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1; /* Ocupa todo o espaço do 'main-content' */
+  gap: 1rem;
+  
+  /* --- MUDANÇA PRINCIPAL AQUI --- */
+  /* Removemos o margin negativo e o padding original */
+  /* A página agora vai respeitar o padding do layout principal */
+  margin: 0;
+  padding: 0; 
+  /* --- FIM DA MUDANÇA --- */
+
+  background-color: #1a1a1a; /* Fundo escuro */
+  border-radius: 12px; /* Arredonda a página inteira do jogo */
+  overflow: hidden; /* Garante que o iframe respeite a borda */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.5rem; /* Mais padding lateral */
+  background-color: #2a2a2a;
+  /* Não precisa mais de border-radius, pois a .page já tem */
+  flex-shrink: 0; 
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+.button {
+  background-color: #353535;
+  color: white;
+  padding: 0.5rem 1rem;
+  border: 1px solid #555;
+  border-radius: 6px;
+  cursor: pointer;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+.button:hover {
+  background-color: #454545;
+}
+
+.iframeContainer {
+  flex-grow: 1; /* Ocupa todo o espaço restante */
+  width: 100%;
+  /* Removemos a borda, pois a .page já tem */
+}
+
+.iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+/* Estilos da página de erro */
+.errorPage {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}
+.errorTitle {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #ef4444;
+}
+.errorMessage {
+  font-size: 1.1rem;
+  color: #a7a7a7;
+}

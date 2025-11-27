@@ -14,10 +14,9 @@
   width: 100%;
 }
 
-/* Em telas maiores, dividimos em colunas */
 @media (min-width: 768px) {
   .grid {
-    grid-template-columns: 2fr 3fr; /* Imagem (2) e Info (3) */
+    grid-template-columns: 2fr 3fr;
   }
 }
 
@@ -61,7 +60,7 @@
   font-size: 1rem;
   color: #e0e0e0;
   line-height: 1.6;
-  flex-grow: 1; /* Empurra a caixa de ação para baixo */
+  flex-grow: 1;
 }
 
 .actionBox {
@@ -91,13 +90,56 @@
   cursor: pointer;
   transition: all 0.2s ease-in-out;
   font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .button:hover {
   background-color: var(--secondary-color);
 }
 
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.inLibrary {
+  background-color: #555555;
+  color: #a7a7a7;
+}
+.inLibrary:hover {
+  background-color: #555555;
+}
+
+.errorSmall {
+  color: #fca5a5;
+  font-size: 0.9rem;
+  max-width: 150px;
+  text-align: right;
+}
+
 .error {
   color: #fca5a5;
   font-size: 1.2rem;
 }
+/* ... (estilos anteriores) ... */
+
+.inLibrary {
+  background-color: #555555;
+  color: #a7a7a7;
+}
+.inLibrary:hover {
+  background-color: #555555;
+}
+
+/* --- NOVO ESTILO --- */
+.inCart {
+  background-color: transparent;
+  color: var(--primary-color);
+  border: 1px solid var(--primary-color);
+}
+.inCart:hover {
+  background-color: rgba(147, 51, 234, 0.1); /* Roxo bem claro */
+}
+/* --- FIM DO NOVO ESTILO --- */

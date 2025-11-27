@@ -1,0 +1,130 @@
+/* src/app/checkout/page.module.css */
+.page {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: #1a1a1a;
+  border-radius: 8px;
+}
+
+.title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  color: #fff;
+  text-align: center;
+}
+
+.info {
+  font-size: 0.9rem;
+  color: #aaa;
+  margin-bottom: 2rem;
+  text-align: center;
+  background-color: #2a2a2a;
+  padding: 1rem;
+  border-radius: 4px;
+}
+
+/* Reutilizando estilos do summary do carrinho */
+.summary {
+  width: 100%;
+  padding: 1.5rem;
+  background-color: #252525;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.summaryTitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
+
+.summaryRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.summaryRow[data-total="true"] {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-top: 1rem;
+}
+
+.totalPrice {
+  font-weight: 600;
+}
+
+.divider {
+  border: 0;
+  height: 1px;
+  background-color: #333;
+  margin: 1rem 0;
+}
+
+.checkoutButton {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #007bff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  margin-top: 1rem;
+}
+
+.checkoutButton:hover {
+  background-color: #0056b3;
+}
+
+.checkoutButton:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+}
+
+.error {
+  color: #f87171;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.backLink {
+  display: block;
+  text-align: center;
+  margin-top: 1.5rem;
+  color: #aaa;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.backLink:hover {
+  color: #fff;
+  text-decoration: underline;
+}
+
+/* Estilos para "carrinho vazio" */
+.empty {
+  text-align: center;
+  padding: 4rem 0;
+}
+
+.empty p {
+  font-size: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.button {
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #007bff;
+  border-radius: 4px;
+  text-decoration: none;
+}

@@ -67,6 +67,7 @@ function SubmitGameContent() {
     <main className={styles.page}>
       <div className={styles.formContainer}>
         <h1 className={styles.title}>Enviar seu Jogo</h1>
+        <br />
         <p className={styles.subtitle}>
           Preencha os detalhes do seu jogo. Ele será revisado antes de aparecer na loja.
         </p>

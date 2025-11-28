@@ -1,105 +1,149 @@
 /* src/app/submit-game/page.module.css */
-/* Usamos muitos estilos do formulário de login */
+
+/* Variáveis de Cores Sugeridas (Se não estiverem em seu arquivo global) */
+/*
+:root {
+  --primary-color: #6c5ce7; // Roxo (Ação)
+  --secondary-color: #4CAF50; // Verde (Sucesso/Destaque)
+  --background-dark: #121212;
+  --card-dark: #1e1e1e;
+  --border-subtle: #333333;
+  --text-light: #e0e0e0;
+}
+*/
+
 .page {
+  /* Centraliza o conteúdo principal */
   display: flex;
   flex-grow: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
+  padding: 3rem 1rem;
+  /* Garante que a página ocupe todo o espaço disponível */
+  min-height: 100vh;
 }
 
 .formContainer {
-  background-color: #353535;
+  /* Cor de fundo mais escura para melhor contraste com o fundo da página */
+  background-color: #1e1e1e; 
   padding: 3rem;
   border-radius: 12px;
-  border: 1px solid #555555;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  /* Borda sutil */
+  border: 1px solid #333333;
+  /* Sombra mais pronunciada, mas suave */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
   width: 100%;
-  max-width: 700px;
+  max-width: 750px; /* Aumentado um pouco para acomodar mais campos */
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .title {
-  color: #FFFFFF;
+  color: var(--primary-color, #6c5ce7); /* Título com cor primária */
   text-align: center;
   margin-bottom: 0.5rem;
-  font-size: 2rem;
-  font-weight: 600;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
 }
 
 .subtitle {
   color: #a7a7a7;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 2.5rem;
+  font-size: 1.05rem;
 }
 
 .formGroup {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.8rem; /* Aumenta o espaçamento entre os grupos */
 }
 
 .label {
   display: block;
-  color: #e0e0e0;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  font-weight: 500;
+  color: #FFFFFF; /* Label em branco puro para alto contraste */
+  margin-bottom: 0.6rem;
+  font-size: 1rem;
+  font-weight: 600; /* Mais negrito */
+  letter-spacing: 0.2px;
 }
 
 .input,
 .textarea {
   width: 100%;
-  padding: 0.9rem;
+  padding: 1rem; /* Padding maior */
   background-color: #2a2a2a;
-  border: 1px solid #555555;
-  border-radius: 6px;
+  border: 1px solid #444444; /* Borda mais escura */
+  border-radius: 8px; /* Bordas mais arredondadas */
   color: #FFFFFF;
-  font-size: 1rem;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  font-family: inherit; /* Garante que a fonte seja a mesma */
+  font-size: 1.05rem;
+  transition: border-color 0.3s, box-shadow 0.3s, background-color 0.3s;
+  font-family: inherit;
+  /* Estilo de placeholder sutil */
+  &::placeholder {
+    color: #888888;
+  }
 }
 
 .textarea {
-  resize: vertical; /* Permite redimensionar verticalmente */
+  resize: vertical;
+  min-height: 100px; /* Altura mínima para textarea */
 }
 
 .input:focus,
 .textarea:focus {
   outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.3);
+  border-color: var(--primary-color, #6c5ce7);
+  /* Sombra sutil para foco */
+  box-shadow: 0 0 0 2px rgba(108, 92, 231, 0.5); 
+  background-color: #222222;
 }
 
 .button {
   width: 100%;
-  padding: 0.9rem;
-  margin-top: 1rem;
-  background-color: var(--primary-color);
+  padding: 1rem;
+  margin-top: 2rem; /* Espaçamento maior antes do botão */
+  /* Usa a cor primária como gradiente (opcional) */
+  background: linear-gradient(90deg, var(--primary-color, #6c5ce7), #8e44ad); 
   color: #FFFFFF;
   border: none;
-  border-radius: 6px;
-  font-size: 1.1rem;
-  font-weight: bold;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);
+  transition: all 0.3s ease-in-out;
 }
 
 .button:hover {
-  background-color: var(--secondary-color);
+  /* Transição para a cor secundária (ou um roxo mais escuro) */
+  background: linear-gradient(90deg, #5a4ac3, #7a3d9a); 
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(108, 92, 231, 0.6);
 }
 
 .message {
   text-align: center;
-  padding: 0.8rem;
-  border-radius: 6px;
-  margin-bottom: 1rem;
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-size: 1.05rem;
+  font-weight: 600;
 }
 
 .error {
-  background-color: #fca5a5;
-  color: #7f1d1d;
+  background-color: rgba(255, 107, 107, 0.1); /* Fundo vermelho suave */
+  color: #ff6b6b; /* Texto vermelho brilhante */
+  border: 1px solid #ff6b6b;
 }
 
 .success {
-  background-color: #86efac;
-  color: #14532d;
+  background-color: rgba(76, 175, 80, 0.1); /* Fundo verde suave */
+  color: var(--secondary-color, #4CAF50); /* Texto verde brilhante */
+  border: 1px solid var(--secondary-color, #4CAF50);
 }

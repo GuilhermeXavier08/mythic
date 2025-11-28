@@ -36,20 +36,21 @@ export default async function ProfilePage({ params }: { params: { username: stri
     day: 'numeric',
   });
 
+  const { id: userId, bio } = profile;
+
   return (
-    <div className={styles.container}>
-      {/* Profile header (client component) */}
+    <div className={styles.profileContainer}>
       <ProfileHeader profileData={profile} />
 
-      <div style={{ marginTop: 20 }} className={styles.profileContent}>
-        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 20 }}>
-          <div>
-            <UserGameLibrary userId={profile.id} />
-          </div>
-          <aside>
-            <UserFriendList userId={profile.id} />
-            <div style={{ marginTop: 20, color: '#a7a7a7', fontSize: 14 }}>Membro desde {joinDate}</div>
-          </aside>
+
+      <div className={styles.footerGrid}>
+        <div className={styles.gameLibraryBlock}>
+          <UserGameLibrary userId={userId} />
+        </div>
+
+        <div className={styles.friendsBlock}>
+          <UserFriendList userId={userId} joinDate={joinDate} />
+          <p className={styles.memberSinceText}>Membro desde: {joinDate}</p>
         </div>
       </div>
     </div>

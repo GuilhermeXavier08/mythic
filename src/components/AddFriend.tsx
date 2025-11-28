@@ -12,6 +12,7 @@ interface SearchResult {
   friendCode: number;
   isFriend: boolean;
   requestStatus: 'PENDING' | 'NONE';
+  avatarUrl?: string | null; // <-- MUDANÇA: Adicionado campo de avatar
 }
 
 export default function AddFriend() {
@@ -75,7 +76,7 @@ export default function AddFriend() {
 
       setMessage('Solicitação enviada com sucesso!');
       // Atualiza os resultados para mostrar o novo status
-      setResults(results.map(r => 
+      setResults(results.map(r =>
         r.id === friendId ? { ...r, requestStatus: 'PENDING' as const } : r
       ));
     } catch (error: unknown) {
@@ -106,7 +107,7 @@ export default function AddFriend() {
 
       setMessage(`${friendUsername} removido com sucesso.`);
       // Atualiza os resultados para mostrar o novo status
-      setResults(results.map(r => 
+      setResults(results.map(r =>
         r.id === friendId ? { ...r, isFriend: false, requestStatus: 'NONE' as const } : r
       ));
     } catch (error: unknown) {
@@ -134,7 +135,22 @@ export default function AddFriend() {
         {message && <p className={styles.message}>{message}</p>}
         {results.map((u) => (
           <div key={u.id} className={styles.resultItem}>
-            <FaUserCircle size={40} className={styles.resultIcon} />
+
+            {/* // <-- MUDANÇA: Lógica do Avatar adicionada */}
+            <div className={styles.resultAvatarWrapper}>
+              {u.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={u.avatarUrl}
+                  alt={`${u.username}'s avatar`}
+                  className={styles.resultAvatarImage}
+                />
+              ) : (
+                <FaUserCircle size={40} className={styles.resultIcon} />
+              )}
+            </div>
+            {/* // <-- FIM DA MUDANÇA */}
+
             <div className={styles.resultInfo}>
               <span className={styles.resultUsername}>{u.username}</span>
               <span className={styles.resultFriendCode}>ID: {u.friendCode}</span>

@@ -10,6 +10,7 @@ interface SearchResultWithStatus {
   id: string;
   username: string;
   friendCode: number;
+  avatarUrl: string | null; // <-- (Opcional, mas boa prática adicionar aqui)
   isFriend: boolean;
   requestStatus: 'PENDING' | 'NONE';
 }
@@ -80,6 +81,7 @@ export async function GET(request: Request) {
         id: true,
         username: true,
         friendCode: true,
+        avatarUrl: true, // ✨ <-- CORREÇÃO 1
       },
       take: 10,
     });
@@ -117,6 +119,7 @@ export async function GET(request: Request) {
           id: user.id,
           username: user.username,
           friendCode: user.friendCode,
+          avatarUrl: user.avatarUrl, // ✨ <-- CORREÇÃO 2
           isFriend,
           requestStatus,
         };

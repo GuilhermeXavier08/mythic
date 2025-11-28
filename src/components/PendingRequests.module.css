@@ -1,10 +1,13 @@
+/* src/components/PendingRequests.module.css */
 .container {
-  padding: 1rem;
+  padding: 1rem 0;
+  /* Ajustado para 0 padding horizontal */
 }
 
 .message {
   text-align: center;
-  color: #666;
+  color: #a7a7a7;
+  /* Cor ajustada para combinar com outros módulos */
   margin: 2rem 0;
 }
 
@@ -24,7 +27,8 @@
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
+  /* Ajustado para combinar com outros módulos */
   background-color: #353535;
   border-radius: 6px;
 }
@@ -35,9 +39,37 @@
   gap: 1rem;
 }
 
+/* --- INÍCIO DAS MUDANÇAS --- */
+
 .userIcon {
   color: #8b8b8b;
+  width: 100%;
+  /* Adicionado */
+  height: 100%;
+  /* Adicionado */
 }
+
+/* NOVOS ESTILOS */
+.userAvatarWrapper {
+  width: 40px;
+  /* Tamanho do ícone no JSX */
+  height: 40px;
+  /* Tamanho do ícone no JSX */
+  border-radius: 50%;
+  overflow: hidden;
+  display: inline-block;
+  flex-shrink: 0;
+  /* Impede que o avatar encolha */
+}
+
+.userAvatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* --- FIM DAS MUDANÇAS --- */
 
 .userDetails {
   display: flex;

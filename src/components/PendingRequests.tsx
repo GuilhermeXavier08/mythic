@@ -1,3 +1,4 @@
+// src/components/PendingRequests.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -11,6 +12,7 @@ interface FriendRequest {
     id: string;
     username: string;
     friendCode: number;
+    avatarUrl?: string | null; // <-- MUDANÇA 1: Adicionado avatarUrl
   };
   createdAt: string;
 }
@@ -22,6 +24,7 @@ export default function PendingRequests() {
   const [error, setError] = useState<string | null>(null);
 
   const fetchRequests = async () => {
+    setLoading(true); // <-- Adicionado para garantir o estado de loading ao recarregar
     try {
       const response = await fetch('/api/friends/received-requests', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -31,6 +34,7 @@ export default function PendingRequests() {
       }
       const data = (await response.json()) as FriendRequest[];
       setRequests(data || []);
+      setError(null); // <-- Limpa erros anteriores
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       setError(message);
@@ -40,7 +44,9 @@ export default function PendingRequests() {
   };
 
   useEffect(() => {
-    fetchRequests();
+    if (token) { // <-- Boa prática verificar o token antes de buscar
+      fetchRequests();
+    }
   }, [token]);
 
   const handleRequest = async (requestId: string, action: 'ACCEPT' | 'REJECT') => {
@@ -65,8 +71,8 @@ export default function PendingRequests() {
         );
       }
 
-      // Atualiza a lista após a ação
-      fetchRequests();
+      // Atualiza a lista após a ação (remove o item da UI imediatamente ou busca de novo)
+      fetchRequests(); // Recarrega a lista do servidor
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       setError(message);
@@ -91,7 +97,22 @@ export default function PendingRequests() {
           {requests.map((request) => (
             <div key={request.id} className={styles.requestItem}>
               <div className={styles.userInfo}>
-                <FaUserCircle size={40} className={styles.userIcon} />
+
+                {/* // <-- MUDANÇA 2: Lógica do Avatar adicionada */}
+                <div className={styles.userAvatarWrapper}>
+                  {request.sender.avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={request.sender.avatarUrl}
+                      alt={`${request.sender.username}'s avatar`}
+                      className={styles.userAvatarImage}
+                    />
+                  ) : (
+                    <FaUserCircle size={40} className={styles.userIcon} />
+                  )}
+                </div>
+                {/* // <-- FIM DA MUDANÇA 2 */}
+
                 <div className={styles.userDetails}>
                   <span className={styles.username}>{request.sender.username}</span>
                   <span className={styles.friendCode}>

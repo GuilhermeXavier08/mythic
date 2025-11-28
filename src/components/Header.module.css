@@ -167,7 +167,6 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 2px solid var(--primary-color, #a259ff);
 }
 
 .avatarImage {

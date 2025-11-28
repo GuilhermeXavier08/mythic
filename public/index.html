@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mythic Lander - Teste Aprimorado</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #212121;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.min.js"></script>
+</head>
+<body>
+    <script>
+        // --- 1. CONFIGURAÇÃO DO JOGO (PHASER) ---
+
+        const config = {
+            type: Phaser.AUTO,
+            width: 800,
+            height: 600,
+            backgroundColor: '#000033', // Fundo escuro do espaço
+            physics: {
+                default: 'arcade',
+                arcade: {
+                    gravity: { y: 0 },
+                    debug: false // Mude para true se quiser ver as caixas de colisão
+                }
+            },
+            scene: {
+                preload: preload,
+                create: create,
+                update: update
+            }
+        };
+
+        let player;
+        let cursors;
+        let score = 0;
+        let scoreText;
+        let gameOver = false;
+        let asteroids;
+        let game = new Phaser.Game(config);
+
+        function preload ()
+        {
+            // Substituímos o logo do Phaser por uma imagem mais abstrata para o asteroide.
+            this.load.image('ship', 'https://labs.phaser.io/assets/sprites/phaser-ship.png');
+            this.load.image('asteroid', 'https://labs.phaser.io/assets/sprites/baddie.png');
+        }
+
+        function create ()
+        {
+            // Cria o jogador
+            player = this.physics.add.image(400, 300, 'ship').setOrigin(0.5, 0.5);
+            player.setDamping(true);
+            player.setDrag(0.99);
+            player.setMaxVelocity(300);
+            player.setCollideWorldBounds(true);
+            
+            // Cria os controles do teclado
+            cursors = this.input.keyboard.createCursorKeys();
+
+            // Configuração da pontuação
+            scoreText = this.add.text(16, 16, 'Pontos: 0', { 
+                fontSize: '24px', 
+                fill: '#fff', 
+                fontFamily: 'Arial' 
+            });
+
+            // Cria o grupo de asteroides
+            asteroids = this.physics.add.group();
+            
+            // Adiciona asteroides periodicamente (a cada 1 segundo)
+            this.time.addEvent({
+                delay: 1000,
+                callback: addAsteroid,
+                callbackScope: this,
+                loop: true
+            });
+
+            // Configura a colisão entre o jogador e os asteroides
+            this.physics.add.collider(player, asteroids, hitAsteroid, null, this);
+        }
+
+        function addAsteroid()
+        {
+            // Escolhe um lado aleatório para o asteroide aparecer (0:Topo, 1:Direita, 2:Baixo, 3:Esquerda)
+            const side = Phaser.Math.Between(0, 3);
+            let x, y, velocityX, velocityY;
+
+            // Define posição inicial e velocidade
+            switch(side) {
+                case 0: // Topo
+                    x = Phaser.Math.Between(0, 800);
+                    y = 0;
+                    velocityX = Phaser.Math.Between(-50, 50);
+                    velocityY = Phaser.Math.Between(100, 200);
+                    break;
+                case 1: // Direita
+                    x = 800;
+                    y = Phaser.Math.Between(0, 600);
+                    velocityX = Phaser.Math.Between(-200, -100);
+                    velocityY = Phaser.Math.Between(-50, 50);
+                    break;
+                case 2: // Baixo
+                    x = Phaser.Math.Between(0, 800);
+                    y = 600;
+                    velocityX = Phaser.Math.Between(-50, 50);
+                    velocityY = Phaser.Math.Between(-200, -100);
+                    break;
+                case 3: // Esquerda
+                    x = 0;
+                    y = Phaser.Math.Between(0, 600);
+                    velocityX = Phaser.Math.Between(100, 200);
+                    velocityY = Phaser.Math.Between(-50, 50);
+                    break;
+            }
+
+            const asteroid = asteroids.create(x, y, 'asteroid');
+            asteroid.setBodySize(32, 32);
+            asteroid.setVelocity(velocityX, velocityY);
+            asteroid.setAngularVelocity(Phaser.Math.Between(-100, 100)); // Faz ele girar
+            asteroid.setBounce(0.5); // Quica um pouco
+            asteroid.setCollideWorldBounds(false);
+            
+            // Adiciona um evento para destruir o asteroide quando ele sai da tela
+            asteroid.checkWorldBounds = true;
+            asteroid.outOfBoundsKill = true;
+
+            // Aumenta a pontuação a cada asteroide que aparece
+            score += 10;
+            scoreText.setText('Pontos: ' + score);
+        }
+
+        function hitAsteroid (player, asteroid)
+        {
+            if (gameOver) return;
+
+            // Efeito visual de explosão e vibração
+            this.cameras.main.shake(500); 
+            player.setTint(0xff0000); // Cor vermelha na nave
+
+            // Congela o jogo e exibe a mensagem de fim
+            this.physics.pause();
+            
+            gameOver = true;
+            
+            this.add.text(400, 300, 'FIM DE JOGO!', { 
+                fontSize: '64px', 
+                fill: '#ff0000', 
+                fontFamily: 'Arial' 
+            }).setOrigin(0.5);
+            
+            this.add.text(400, 380, 'Pontuação Final: ' + score, { 
+                fontSize: '32px', 
+                fill: '#ffffff', 
+                fontFamily: 'Arial' 
+            }).setOrigin(0.5);
+            
+            this.add.text(400, 450, 'Clique para Reiniciar', { 
+                fontSize: '20px', 
+                fill: '#ffff00', 
+                fontFamily: 'Arial' 
+            }).setOrigin(0.5).setInteractive().on('pointerdown', () => {
+                window.location.reload(); // Recarrega a página para reiniciar
+            });
+        }
+
+        function update ()
+        {
+            if (gameOver) return;
+
+            // Lógica de Movimento (Igual ao jogo anterior)
+            if (cursors.up.isDown)
+            {
+                this.physics.velocityFromRotation(player.rotation, 300, player.body.acceleration);
+            }
+            else
+            {
+                player.setAcceleration(0);
+            }
+
+            if (cursors.left.isDown)
+            {
+                player.setAngularVelocity(-150);
+            }
+            else if (cursors.right.isDown)
+            {
+                player.setAngularVelocity(150);
+            }
+            else
+            {
+                player.setAngularVelocity(0);
+            }
+        }
+    </script>
+</body>
+</html>

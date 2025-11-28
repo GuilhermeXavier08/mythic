@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 
-export default async function UserFriendList({ userId }: { userId: string }) {
+export default async function UserFriendList({ userId, joinDate }: { userId: string; joinDate?: string }) {
   const friendships = await prisma.friendship.findMany({
     where: { OR: [{ userId1: userId }, { userId2: userId }] },
     include: {
@@ -33,3 +33,8 @@ export default async function UserFriendList({ userId }: { userId: string }) {
     </section>
   );
 }
+
+// Nota: Este componente é um Server Component que recebe `joinDate` opcionalmente
+// a partir do ProfilePage. Se `joinDate` for passado, mostramos a informação
+// de 'Membro desde' abaixo da lista de amigos para que o layout fique centralizado
+// com o restante do perfil.

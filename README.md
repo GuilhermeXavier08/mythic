@@ -112,6 +112,18 @@ Desenvolvimento de uma aplicação web com possibilidade de jogar e socializar c
 | Derick Correia | Documentação |
 | Enzo Donizetti | Documentação |
 
+### Funções da 4 Semana
+
+| Nome | Função |
+|------|--------|
+| João Cardoso | Programador |
+| Guilherme Xavier | Programador |
+| Eduardo Silva | Canva |
+| Enzo Paralupi | Prototipação |
+| Kaun Santos | Prototipação |
+| Derick Correia | Documentação |
+| Enzo Donizetti | Documentação |
+
 ##  Cronograma
 
 | Etapa | Descrição | Duração |

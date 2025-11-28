@@ -95,16 +95,6 @@ function SettingsContent() {
             <label>Email</label>
             <p className={styles.infoValue}>{user?.email}</p>
           </div>
-          <div className={styles.infoItem}>
-            <label>Meu ID (Friend Code)</label>
-            <p className={styles.infoValue}>{user?.userId}</p>
-          </div>
-          <div className={styles.infoItem}>
-            <label>Tipo de Conta</label>
-            <p className={styles.infoValue}>
-              {user?.role === 'ADMIN' ? 'Administrador' : 'Usuário'}
-            </p>
-          </div>
         </div>
       </div>
 

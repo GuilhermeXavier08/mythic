@@ -50,6 +50,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
         <div className={styles.friendsBlock}>
           <UserFriendList userId={userId} joinDate={joinDate} />
+          
           <p className={styles.memberSinceText}>Membro desde: {joinDate}</p>
         </div>
       </div>

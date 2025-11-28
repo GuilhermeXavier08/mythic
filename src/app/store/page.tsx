@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import styles from './page.module.css';
 import GameCard from '@/components/GameCard';
+import NonAdminGuard from '@/components/NonAdminGuard'; // 1. IMPORTE
 
 // O tipo de dados do Jogo (deve corresponder ao Prisma)
 interface Game {
@@ -15,7 +16,8 @@ interface Game {
   imageUrl: string;
 }
 
-export default function StorePage() {
+// 2. RENOMEIE O COMPONENTE
+function StoreContent() {
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,5 +62,14 @@ export default function StorePage() {
         </div>
       )}
     </main>
+  );
+}
+
+// 3. EXPORTE O COMPONENTE "EMBRULHADO"
+export default function StorePage() {
+  return (
+    <NonAdminGuard>
+      <StoreContent />
+    </NonAdminGuard>
   );
 }

@@ -1,3 +1,4 @@
+// src/app/api/friends/received-requests/route.ts
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { NextResponse } from "next/server";
@@ -21,7 +22,16 @@ export async function GET(request: Request) {
 
     const requests = await db.friendshipRequest.findMany({
       where: { receiverId: decoded.userId, status: 'PENDING' },
-      include: { sender: { select: { id: true, username: true, friendCode: true } } },
+      include: { 
+        sender: { 
+          select: { 
+            id: true, 
+            username: true, 
+            friendCode: true,
+            avatarUrl: true // ✨ <-- CORREÇÃO APLICADA AQUI
+          } 
+        } 
+      },
       orderBy: { createdAt: 'desc' },
     });
 

@@ -1,5 +1,6 @@
 .container {
-  max-width: 1400px; /* Aumentado para mais espaço */
+  max-width: 1300px;
+  min-width: 1300px; /* Aumentado para mais espaço */
   margin: 20px auto;
   padding: 20px;
   background-color: #1e1e1e; /* Fundo escuro da página */

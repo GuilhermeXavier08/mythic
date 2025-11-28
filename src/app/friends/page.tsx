@@ -8,9 +8,10 @@ import AddFriend from '../../components/AddFriend';
 import FriendsList from '../../components/FriendsList';
 import PendingRequests from '../../components/PendingRequests';
 import { FaUserCircle } from 'react-icons/fa';
+import NonAdminGuard from '@/components/NonAdminGuard'; // 1. IMPORTE
 
-// Este componente é a tela principal de amigos
-export default function FriendsPage() {
+// 2. RENOMEIE O COMPONENTE
+function FriendsContent() {
     // Estado para controlar a aba ativa
     const [activeTab, setActiveTab] = useState<'list' | 'add' | 'requests'>('list');
     
@@ -103,4 +104,13 @@ export default function FriendsPage() {
             </section>
         </main>
     );
+}
+
+// 3. EXPORTE O COMPONENTE "EMBRULHADO"
+export default function FriendsPage() {
+  return (
+    <NonAdminGuard>
+      <FriendsContent />
+    </NonAdminGuard>
+  );
 }

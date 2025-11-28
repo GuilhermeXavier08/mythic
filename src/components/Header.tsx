@@ -7,16 +7,15 @@ import { useAuth } from '@/context/AuthContext';
 import { FaUserCircle } from 'react-icons/fa';
 import { useState } from 'react';
 
-// --- ADICIONADO DE VOLTA ---
 import { useCart } from '@/context/CartContext';
 import CartIcon from './CartIcon';
-// --- FIM DA ADIÇÃO ---
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
-  const { itemCount } = useCart(); // <-- ADICIONADO DE VOLTA
+  const { itemCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
+  // Esta variável agora controla todos os links de "não-admin"
   const isDeveloper = user && !isAdmin;
 
   const toggleMenu = () => {
@@ -26,12 +25,12 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles.container}>
-        <div className={styles.leftSection}>{/* ... (Logo e Nav Links) ... */}
+        <div className={styles.leftSection}>
           <Link href="/" className={styles.logo}>
             Mythic
           </Link>
 
-          {user && (
+          {isDeveloper && (
             <nav className={styles.nav}>
               <Link href="/store" className={styles.navLink}>
                 Loja
@@ -61,14 +60,14 @@ export default function Header() {
                 </Link>
               )}
 
-              {/* --- ÍCONE DO CARRINHO ADICIONADO AQUI --- */}
-              <Link href="/cart" className={styles.cartLink}>
-                <CartIcon />
-                {itemCount > 0 && (
-                  <span className={styles.cartCount}>{itemCount}</span>
-                )}
-              </Link>
-              {/* --- FIM DA ADIÇÃO --- */}
+              {isDeveloper && (
+                <Link href="/cart" className={styles.cartLink}>
+                  <CartIcon />
+                  {itemCount > 0 && (
+                    <span className={styles.cartCount}>{itemCount}</span>
+                  )}
+                </Link>
+              )}
 
               {/* Menu Hamburger/Perfil */}
               <div className={styles.userMenu}>
@@ -85,13 +84,15 @@ export default function Header() {
 
                 {isMenuOpen && (
                   <div className={styles.dropdownMenu}>
-                    <Link
-                      href={`/profile/${user.username}`}
-                      onClick={toggleMenu}
-                      className={styles.menuItem}
-                    >
-                      Perfil
-                    </Link>
+                    {isDeveloper && (
+                      <Link
+                        href={`/profile/${user.username}`}
+                        onClick={toggleMenu}
+                        className={styles.menuItem}
+                      >
+                        Perfil
+                      </Link>
+                    )}
                     <Link
                       href="/settings"
                       onClick={toggleMenu}
@@ -118,15 +119,13 @@ export default function Header() {
                 Login
               </Link>
               
-              {/* --- ÍCONE DO CARRINHO ADICIONADO AQUI --- */}
-              <Link href="/cart" className={styles.cartLink}>
-                <CartIcon />
-              </Link>
-              {/* --- FIM DA ADIÇÃO --- */}
+              {/* 1. ALTERADO: O link do carrinho que estava aqui 
+                foi removido. 
+              */}
             </>
           )}
         </div>
       </div>
     </header>
   );
-}
+} 

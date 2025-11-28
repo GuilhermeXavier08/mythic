@@ -4,8 +4,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import styles from './page.module.css';
+import AdminGuard from '@/components/AdminGuard'; // 1. IMPORTE O GUARD
 
 interface GameDeveloper {
   username: string;
@@ -22,12 +22,14 @@ interface PendingGame {
   developer: GameDeveloper;
 }
 
-export default function AdminDashboard() {
+// 2. RENOMEIE O COMPONENTE PRINCIPAL PARA "DashboardContent"
+function DashboardContent() {
   const [games, setGames] = useState<PendingGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth();
 
+  // ... (todo o resto da lógica: fetchPendingGames, useEffect, handleReview)
   // Função para buscar os jogos pendentes
   const fetchPendingGames = async () => {
     setLoading(true);
@@ -65,14 +67,13 @@ export default function AdminDashboard() {
       });
 
       if (!response.ok) throw new Error('Falha ao atualizar o status');
-
-      // Se deu certo, remove o jogo da lista local
       setGames(games.filter(game => game.id !== gameId));
 
     } catch (err: any) {
       setError(err.message);
     }
   };
+
 
   return (
     <main className={styles.page}>
@@ -94,7 +95,6 @@ export default function AdminDashboard() {
               <p className={styles.gameDesc}>{game.description}</p>
               <p className={styles.gamePrice}>R$ {game.price.toFixed(2)}</p>
               
-              {/* Links para testar o jogo */}
               <div className={styles.gameLinks}>
                 <a href={game.gameUrl} target="_blank" rel="noopener noreferrer">Testar Jogo</a>
                 <a href={game.imageUrl} target="_blank" rel="noopener noreferrer">Ver Capa</a>
@@ -118,5 +118,14 @@ export default function AdminDashboard() {
         ))}
       </div>
     </main>
+  );
+}
+
+// 3. CRIE A EXPORTAÇÃO DEFAULT QUE ENVOLVE O CONTEÚDO COM O GUARD
+export default function AdminDashboardPage() {
+  return (
+    <AdminGuard>
+      <DashboardContent />
+    </AdminGuard>
   );
 }

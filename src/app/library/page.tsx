@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
 import LoadingSpinner from '@/components/LoadingSpinner';
-// --- MUDANÇA NO IMPORT ---
 import LibraryGameItem from '@/components/LibraryGameItem';
+import NonAdminGuard from '@/components/NonAdminGuard'; // 1. IMPORTE
 
 interface Game {
   id: string;
@@ -20,7 +20,8 @@ interface PurchaseWithGame {
   game: Game;
 }
 
-export default function LibraryPage() {
+// 2. RENOMEIE O COMPONENTE
+function LibraryContent() {
   const [purchasedGames, setPurchasedGames] = useState<PurchaseWithGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,14 +71,21 @@ export default function LibraryPage() {
         </p>
       )}
 
-      {/* --- MUDANÇA NA LISTAGEM --- */}
       <div className={styles.list}>
         {purchasedGames.map((purchase) => (
           <LibraryGameItem key={purchase.id} game={purchase.game} />
         ))}
       </div>
-      {/* --- FIM DA MUDANÇA --- */}
 
     </main>
+  );
+}
+
+// 3. EXPORTE O COMPONENTE "EMBRULHADO"
+export default function LibraryPage() {
+  return (
+    <NonAdminGuard>
+      <LibraryContent />
+    </NonAdminGuard>
   );
 }

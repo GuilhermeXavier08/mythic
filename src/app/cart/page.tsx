@@ -8,9 +8,10 @@ import Link from 'next/link';
 import styles from './page.module.css';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { FaTrash } from 'react-icons/fa';
-// Imports de Auth e Router removidos daqui
+import NonAdminGuard from '@/components/NonAdminGuard'; // 1. IMPORTE
 
-export default function CartPage() {
+// 2. RENOMEIE O COMPONENTE
+function CartContent() {
   const { 
     items, 
     totalPrice, 
@@ -18,10 +19,8 @@ export default function CartPage() {
     error: cartError,
     removeFromCart, 
     itemCount,
-    // clearCart não é mais chamado aqui
   } = useCart();
   
-  // States e lógicas de checkout removidos
   const [removingId, setRemovingId] = useState<string | null>(null);
 
   const handleRemove = async (itemId: string) => {
@@ -34,8 +33,6 @@ export default function CartPage() {
       setRemovingId(null);
     }
   };
-
-  // Função handleCheckout foi removida daqui
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -105,19 +102,25 @@ export default function CartPage() {
               <span className={styles.totalPrice}>R$ {totalPrice.toFixed(2)}</span>
             </div>
             
-            {/* --- MUDANÇA PRINCIPAL --- */}
-            {/* O <button> foi substituído por um <Link> */}
             <Link 
               href="/checkout" 
               className={styles.checkoutButton}
             >
               Ir para o Pagamento
             </Link>
-            {/* Erros de checkout removidos daqui */}
             
           </div>
         </div>
       )}
     </main>
+  );
+}
+
+// 3. EXPORTE O COMPONENTE "EMBRULHADO"
+export default function CartPage() {
+  return (
+    <NonAdminGuard>
+      <CartContent />
+    </NonAdminGuard>
   );
 }

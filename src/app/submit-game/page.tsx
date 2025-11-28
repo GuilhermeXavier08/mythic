@@ -6,8 +6,10 @@ import { useState, FormEvent } from 'react';
 import styles from './page.module.css';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import NonAdminGuard from '@/components/NonAdminGuard'; // 1. IMPORTE
 
-export default function SubmitGamePage() {
+// 2. RENOMEIE O COMPONENTE
+function SubmitGameContent() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [price, setPrice] = useState('0');
@@ -136,5 +138,14 @@ export default function SubmitGamePage() {
         </form>
       </div>
     </main>
+  );
+}
+
+// 3. EXPORTE O COMPONENTE "EMBRULHADO"
+export default function SubmitGamePage() {
+  return (
+    <NonAdminGuard>
+      <SubmitGameContent />
+    </NonAdminGuard>
   );
 }

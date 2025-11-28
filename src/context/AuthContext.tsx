@@ -3,8 +3,9 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import { useRouter } from 'next/navigation'; // 1. IMPORTE O ROUTER
 
-// 1. Adiciona 'role' à interface User
+// ... (interfaces User e AuthContextType permanecem as mesmas)
 interface User {
   userId: string;
   email: string;
@@ -30,9 +31,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   
-  // 2. Adiciona estado 'isAdmin'
-  const [isAdmin, setIsAdmin] = useState(false); // <-- ADICIONADO
+  const router = useRouter(); // 2. INICIALIZE O ROUTER AQUI
 
   useEffect(() => {
     let mounted = true;
@@ -72,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Busca o perfil completo do usuário usando o token e atualiza o estado/localStorage
+  // ... (função fetchUserProfile permanece a mesma)
   const fetchUserProfile = async (token: string, basicUser: Partial<User>) => {
     try {
       const response = await fetch('/api/users/me/profile', {
@@ -83,7 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        // Try to read error text for debugging, but don't throw on invalid JSON
         let errText: string | null = null;
         try {
           errText = await response.text();
@@ -91,7 +91,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           errText = null;
         }
         console.error(`[fetchUserProfile] Server returned ${response.status}:`, errText);
-        // fallback to basic user without attempting to parse JSON
         const fallback = basicUser as User;
         setUser(fallback);
         try {
@@ -100,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      // If response is OK, attempt to parse JSON safely
       let data: any = {};
       try {
         data = await response.json();
@@ -117,7 +115,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           localStorage.setItem('mythic_user', JSON.stringify(completeUser));
         } catch (e) {}
       } else {
-        // fallback to basic user
         const fallback = basicUser as User;
         setUser(fallback);
         try {
@@ -131,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  // ... (função login permanece a mesma)
   const login = async (newToken: string) => {
     try {
       const decodedToken = jwtDecode<Partial<User>>(newToken) as Partial<User>;
@@ -141,18 +139,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         avatarUrl: (decodedToken as any).avatarUrl ?? null,
       };
 
-      // 1. Salva o token e estado básico
       localStorage.setItem('mythic_token', newToken);
       setToken(newToken);
       setIsAdmin((decodedToken.role as any) === 'ADMIN');
 
-      // 2. Busca o perfil completo e atualiza o estado
       await fetchUserProfile(newToken, basicUser);
     } catch (error) {
       console.error('Erro ao decodificar token no login:', error);
     }
   };
 
+  // ... (função updateUser permanece a mesma)
   const updateUser = (newUserData: Partial<User>) => {
     console.log('AuthContext.updateUser called with:', newUserData);
     setUser((current) => {
@@ -165,11 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setTimeout(() => console.log('AuthContext.updateUser completed for:', newUserData), 50);
   };
 
+  // 3. ATUALIZE A FUNÇÃO LOGOUT
   const logout = () => {
     localStorage.removeItem('mythic_token');
+    localStorage.removeItem('mythic_user'); // Garante que o usuário cacheado saia
     setToken(null);
     setUser(null);
-    setIsAdmin(false); // <-- ADICIONADO
+    setIsAdmin(false);
+    router.push('/login'); // <-- ADICIONA O REDIRECIONAMENTO
   };
 
   return (

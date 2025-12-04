@@ -30,22 +30,31 @@ enum RequestStatus {
 }
 
 model User {
-  id        String     @id @default(cuid())
-  email     String     @unique
-  name      String?
-  username  String     @unique
-  friendCode Int       @unique
-  bio       String? // A interrogação '?' permite que seja nulo
-  avatarUrl String? // A interrogação '?' permite que seja nulo
-  password  String
-  createdAt DateTime   @default(now())
-  
-  role      Role       @default(USER)
-  
+  id              String                @id @default(cuid())
+  email           String                @unique
+  name            String?
+  username        String                @unique
+  friendCode      Int                   @unique
+  bio             String? // A interrogação '?' permite que seja nulo
+  avatarUrl       String? // A interrogação '?' permite que seja nulo
+  password        String
+  createdAt       DateTime              @default(now())
+
+  role            Role                  @default(USER)
+
+  // --- CONFIGURAÇÕES DE PRIVACIDADE E NOTIFICAÇÕES (OPÇÃO 1) ---
+  // Corresponde a "QUERO RECEBER A NEWSLETTER MYTHIC..."
+  receivesNewsletter Boolean            @default(true)
+  // Corresponde a "Seu perfil é Público."
+  isProfilePublic    Boolean            @default(true)
+  // Corresponde a "Futuramente, você poderá ocultar suas estatísticas..."
+  showStatsToOthers  Boolean            @default(true)
+  // -------------------------------------------------------------
+
   // Game related relations
-  purchases      Purchase[]
-  submittedGames Game[]
-  cart           Cart? // <-- ADICIONADO (O User tem um Cart)
+  purchases         Purchase[]
+  submittedGames    Game[]
+  cart              Cart? // O User tem um Cart
 
   // Friend related relations
   sentRequests     FriendshipRequest[] @relation("SentRequests")
@@ -59,19 +68,19 @@ model User {
 }
 
 model Game {
-  id          String   @id @default(cuid())
+  id          String     @id @default(cuid())
   title       String
   description String
   price       Float
   imageUrl    String
-  gameUrl     String   @default("")
+  gameUrl     String     @default("")
   status      GameStatus @default(PENDING)
 
   developerId String
-  developer   User     @relation(fields: [developerId], references: [id])
+  developer   User       @relation(fields: [developerId], references: [id])
 
   purchases Purchase[]
-  cartItems CartItem[] // <-- ADICIONADO (O Game está em vários CartItems)
+  cartItems CartItem[] // O Game está em vários CartItems
 
   @@unique([developerId, title])
 }
@@ -98,11 +107,11 @@ model Cart {
 
 // NOVO MODELO: Um item dentro do carrinho
 model CartItem {
-  id     String   @id @default(cuid())
-  cartId String
-  cart   Cart     @relation(fields: [cartId], references: [id])
-  gameId String
-  game   Game     @relation(fields: [gameId], references: [id])
+  id      String   @id @default(cuid())
+  cartId  String
+  cart    Cart     @relation(fields: [cartId], references: [id])
+  gameId  String
+  game    Game     @relation(fields: [gameId], references: [id])
   addedAt DateTime @default(now())
 
   // Garante que o mesmo jogo não possa ser adicionado duas vezes no mesmo carrinho
@@ -110,14 +119,14 @@ model CartItem {
 }
 
 model FriendshipRequest {
-  id         String        @id @default(cuid())
+  id         String          @id @default(cuid())
   senderId   String
-  sender     User          @relation("SentRequests", fields: [senderId], references: [id])
+  sender     User            @relation("SentRequests", fields: [senderId], references: [id])
   receiverId String
-  receiver   User          @relation("ReceivedRequests", fields: [receiverId], references: [id])
-  status     RequestStatus @default(PENDING)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  receiver   User            @relation("ReceivedRequests", fields: [receiverId], references: [id])
+  status     RequestStatus   @default(PENDING)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
 
   @@unique([senderId, receiverId])
 }

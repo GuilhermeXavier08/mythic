@@ -1,4 +1,5 @@
 /* src/components/FriendsList.module.css */
+
 .container {
   display: flex;
   flex-direction: column;
@@ -83,6 +84,36 @@
   color: #a7a7a7;
 }
 
+/* --- NOVAS CLASSES ADICIONADAS --- */
+
+/* Agrupa os botões para ficarem alinhados */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem; /* Espaço entre o botão de chat e o de remover */
+}
+
+/* Botão Circular de Chat */
+.chatButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;  /* Tamanho fixo */
+  height: 42px; /* Igual a largura para ser círculo */
+  border-radius: 50%;
+  border: none;
+  background-color: #404040; /* Um cinza um pouco mais claro que o fundo */
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.chatButton:hover {
+  background-color: #3b82f6; /* Azul ao passar o mouse */
+  transform: scale(1.05); /* Leve efeito de zoom */
+}
+/* -------------------------------- */
+
 .removeButton {
   padding: 0.5rem 1rem;
   background-color: #ff6b6b;
@@ -92,6 +123,7 @@
   font-weight: bold;
   cursor: pointer;
   transition: background-color 0.2s;
+  height: 42px; /* Para garantir que tenha a mesma altura do botão de chat */
 }
 
 .removeButton:hover {

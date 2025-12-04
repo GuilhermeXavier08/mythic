@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Furry Doom Survivors</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            image-rendering: pixelated; /* Estilo Retro */
+        }
+
+        /* Interface do Usuário (HUD) */
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .hud-top {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            text-shadow: 2px 2px 0 #000;
+        }
+
+        .stat-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #555;
+        }
+
+        .bar-container {
+            width: 200px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #fff;
+            margin-top: 5px;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.2s;
+        }
+
+        #hp-bar { background: #e74c3c; width: 100%; }
+        #xp-bar { background: #3498db; width: 0%; }
+
+        #level-indicator {
+            font-size: 30px;
+            color: #ffd700;
+            font-weight: bold;
+        }
+
+        /* Overlay de Dano/Flash */
+        #flash-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: red;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.1s;
+        }
+
+        #message-log {
+            position: absolute;
+            top: 20%;
+            width: 100%;
+            text-align: center;
+            font-size: 24px;
+            color: #fff;
+            text-shadow: 0 0 10px #f0f;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        /* Controles Mobile */
+        #mobile-controls {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            width: 100%;
+            height: 180px;
+            z-index: 20;
+            pointer-events: none;
+        }
+        
+        .control-group {
+            position: absolute;
+            bottom: 10px;
+            pointer-events: auto;
+        }
+
+        #dpad { left: 20px; }
+        #actions { right: 20px; display: flex; align-items: flex-end;}
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            margin: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            backdrop-filter: blur(4px);
+        }
+        
+        .btn:active { background: rgba(255, 215, 0, 0.4); }
+        #btn-shoot { width: 80px; height: 80px; background: rgba(255, 0, 0, 0.3); border-color: #ff4444; }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="flash-overlay"></div>
+    
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div class="stat-box">
+                <div>❤️ SAÚDE</div>
+                <div class="bar-container"><div id="hp-bar" class="bar-fill"></div></div>
+            </div>
+            
+            <div id="level-indicator">LVL <span id="level-val">1</span></div>
+
+            <div class="stat-box">
+                <div>💎 XP / SCORE</div>
+                <div class="bar-container"><div id="xp-bar" class="bar-fill"></div></div>
+                <div style="text-align: right; font-size: 12px; margin-top: 4px;">Kills: <span id="kills-val">0</span></div>
+            </div>
+        </div>
+
+        <div id="message-log">WAVE START!</div>
+    </div>
+
+    <!-- Controles Touch -->
+    <div id="mobile-controls">
+        <div id="dpad" class="control-group">
+            <div style="text-align:center;">
+                <div class="btn" id="btn-up">⬆️</div><br>
+                <div class="btn" id="btn-left">⬅️</div>
+                <div class="btn" id="btn-right">➡️</div><br>
+                <div class="btn" id="btn-down">⬇️</div>
+            </div>
+        </div>
+        <div id="actions" class="control-group">
+            <div class="btn" id="btn-shoot">🔥</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Configuração e Estado Global ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false });
+    
+    // Elementos UI
+    const hpBar = document.getElementById('hp-bar');
+    const xpBar = document.getElementById('xp-bar');
+    const levelVal = document.getElementById('level-val');
+    const killsVal = document.getElementById('kills-val');
+    const flashOverlay = document.getElementById('flash-overlay');
+    const msgLog = document.getElementById('message-log');
+
+    // Estado do Jogo
+    let lastTime = 0;
+    let zBuffer = []; // Buffer de profundidade para sprites não aparecerem atrás de paredes
+    
+    const gameState = {
+        score: 0,
+        kills: 0,
+        level: 1,
+        xp: 0,
+        xpToNextLevel: 100,
+        maxHp: 100,
+        hp: 100,
+        isDead: false
+    };
+
+    // Mapa (24x24)
+    const mapWidth = 24;
+    const mapHeight = 24;
+    const worldMap = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,2,2,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,3,0,0,0,3,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,0,0,0,5,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    // Jogador
+    const player = {
+        x: 22,
+        y: 12,
+        dirX: -1,
+        dirY: 0,
+        planeX: 0,
+        planeY: 0.66,
+        moveSpeed: 0,
+        rotSpeed: 0,
+        weaponTimer: 0,
+        isShooting: false
+    };
+
+    // --- Assets (Gerados via Canvas para evitar imagens externas) ---
+    const textures = {};
+
+    function createTexture(emoji, size = 64, bgColor = null) {
+        const c = document.createElement('canvas');
+        c.width = size;
+        c.height = size;
+        const cx = c.getContext('2d');
+        if (bgColor) {
+            cx.fillStyle = bgColor;
+            cx.fillRect(0,0,size,size);
+        }
+        cx.font = `${size * 0.8}px serif`;
+        cx.textAlign = 'center';
+        cx.textBaseline = 'middle';
+        cx.fillText(emoji, size/2, size/2 + size * 0.1);
+        return c;
+    }
+
+    // Arma (Pata segurando arma)
+    function createWeaponTexture() {
+        const c = document.createElement('canvas');
+        c.width = 200;
+        c.height = 200;
+        const cx = c.getContext('2d');
+        
+        // Braço/Pêlo
+        cx.fillStyle = '#8B4513';
+        cx.beginPath();
+        cx.moveTo(140, 200);
+        cx.lineTo(160, 100);
+        cx.lineTo(200, 120);
+        cx.lineTo(200, 200);
+        cx.fill();
+
+        // Arma (Cinza)
+        cx.fillStyle = '#555';
+        cx.fillRect(80, 80, 80, 40); // Corpo
+        cx.fillRect(150, 90, 20, 50); // Cabo
+        cx.fillStyle = '#222';
+        cx.fillRect(80, 85, 30, 10); // Cano detalhe
+
+        return c;
+    }
+
+    textures.wolf = createTexture('🐺');
+    textures.fox = createTexture('🦊');
+    textures.gem = createTexture('💎');
+    textures.gun = createWeaponTexture();
+
+    // --- Entidades (Sprites) ---
+    // Tipos: 1 = Inimigo Fraco, 2 = Inimigo Forte, 3 = Item/XP
+    let sprites = [];
+
+    class Sprite {
+        constructor(x, y, type) {
+            this.x = x;
+            this.y = y;
+            this.type = type; // 'wolf', 'fox', 'gem'
+            this.removed = false;
+            
+            // Atributos baseados no tipo
+            if (type === 'wolf') {
+                this.hp = 20 + (gameState.level * 5);
+                this.speed = 1.5;
+                this.texture = textures.wolf;
+                this.scale = 1.0;
+                this.damage = 5;
+            } else if (type === 'fox') {
+                this.hp = 50 + (gameState.level * 10);
+                this.speed = 0.8;
+                this.texture = textures.fox;
+                this.scale = 1.2; // Maior
+                this.damage = 10;
+            } else if (type === 'gem') {
+                this.texture = textures.gem;
+                this.scale = 0.5;
+                this.speed = 0;
+            }
+        }
+    }
+
+    // Spawn inicial
+    function spawnEnemy() {
+        // Tenta spawnar longe do jogador
+        let sx, sy;
+        let attempts = 0;
+        do {
+            sx = Math.floor(Math.random() * mapWidth);
+            sy = Math.floor(Math.random() * mapHeight);
+            attempts++;
+        } while (
+            (worldMap[sx][sy] !== 0 || Math.hypot(player.x - sx, player.y - sy) < 4) 
+            && attempts < 100
+        );
+
+        const type = Math.random() > 0.8 ? 'fox' : 'wolf';
+        sprites.push(new Sprite(sx + 0.5, sy + 0.5, type));
+    }
+
+    // --- Inputs ---
+    const keys = {
+        w: false, s: false, a: false, d: false,
+        ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
+        Shift: false, Space: false
+    };
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        ctx.imageSmoothingEnabled = false;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    window.addEventListener('keydown', (e) => {
+        if(keys.hasOwnProperty(e.key) || e.key === "Shift") keys[e.key] = true;
+        if(e.code === 'Space') shoot();
+    });
+    window.addEventListener('keyup', (e) => {
+        if(keys.hasOwnProperty(e.key) || e.key === "Shift") keys[e.key] = false;
+    });
+    window.addEventListener('mousedown', (e) => {
+        shoot();
+    });
+
+    if('ontouchstart' in window) {
+        document.getElementById('mobile-controls').style.display = 'block';
+        const bindTouch = (id, key) => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+        };
+        bindTouch('btn-up', 'w');
+        bindTouch('btn-down', 's');
+        bindTouch('btn-left', 'a');
+        bindTouch('btn-right', 'd');
+        
+        const shootBtn = document.getElementById('btn-shoot');
+        shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); shoot(); });
+    }
+
+    // --- Sistema de Combate ---
+
+    function shoot() {
+        if (gameState.isDead) return;
+        player.isShooting = true;
+        player.weaponTimer = 0.2; // Tempo da animação
+
+        // Hitscan: Verifica se algum inimigo está na frente (centro da tela)
+        // Ordena sprites por proximidade para acertar o mais perto primeiro
+        sprites.sort((a, b) => {
+            const distA = (player.x - a.x)**2 + (player.y - a.y)**2;
+            const distB = (player.x - b.x)**2 + (player.y - b.y)**2;
+            return distA - distB;
+        });
+
+        let hit = false;
+        for (let sprite of sprites) {
+            if (sprite.type === 'gem' || sprite.removed) continue;
+
+            const dx = sprite.x - player.x;
+            const dy = sprite.y - player.y;
+            
+            // Projeta o inimigo em relação à camera
+            // Matemática similar ao draw, mas simplificada para detectar se está no "centro"
+            const invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY);
+            const transformY = invDet * (-player.planeY * dx + player.planeX * dy); // Profundidade
+            const transformX = invDet * (player.dirY * dx - player.dirX * dy); // Posição lateral
+
+            if (transformY > 0) {
+                // Largura do sprite na tela
+                const spriteScreenX = (canvas.width / 2) * (1 + transformX / transformY);
+                const spriteHeight = Math.abs(canvas.height / transformY); // Altura na tela
+                const spriteWidth = Math.abs(canvas.height / transformY);
+
+                // Verifica se o centro da tela (mira) está dentro do sprite
+                const centerX = canvas.width / 2;
+                if (centerX > spriteScreenX - spriteWidth/2 && centerX < spriteScreenX + spriteWidth/2) {
+                    // ACERTOU
+                    sprite.hp -= 20; // Dano da arma
+                    hit = true;
+                    
+                    // Empurrão (Knockback simples)
+                    sprite.x += player.dirX * 0.5;
+                    sprite.y += player.dirY * 0.5;
+
+                    if (sprite.hp <= 0) {
+                        sprite.removed = true;
+                        gameState.kills++;
+                        killsVal.innerText = gameState.kills;
+                        // Drop Gem
+                        sprites.push(new Sprite(sprite.x, sprite.y, 'gem'));
+                    }
+                    break; // Hitscan só acerta o primeiro
+                }
+            }
+        }
+    }
+
+    function showMessage(text) {
+        msgLog.innerText = text;
+        msgLog.style.opacity = 1;
+        setTimeout(() => { msgLog.style.opacity = 0; }, 2000);
+    }
+
+    function takeDamage(amount) {
+        gameState.hp -= amount;
+        hpBar.style.width = (gameState.hp / gameState.maxHp * 100) + '%';
+        
+        // Efeito visual
+        flashOverlay.style.opacity = 0.5;
+        setTimeout(() => { flashOverlay.style.opacity = 0; }, 100);
+
+        if (gameState.hp <= 0 && !gameState.isDead) {
+            gameState.isDead = true;
+            showMessage("GAME OVER - F5 to Restart");
+        }
+    }
+
+    function gainXp(amount) {
+        gameState.xp += amount;
+        if (gameState.xp >= gameState.xpToNextLevel) {
+            gameState.level++;
+            gameState.xp = 0;
+            gameState.xpToNextLevel = Math.floor(gameState.xpToNextLevel * 1.5);
+            gameState.hp = gameState.maxHp; // Cura ao upar
+            hpBar.style.width = '100%';
+            levelVal.innerText = gameState.level;
+            showMessage("LEVEL UP!");
+        }
+        xpBar.style.width = (gameState.xp / gameState.xpToNextLevel * 100) + '%';
+    }
+
+    // --- Lógica Principal (Update) ---
+
+    let spawnTimer = 0;
+
+    function update(dt) {
+        if (gameState.isDead) return;
+
+        // Animação da arma
+        if (player.weaponTimer > 0) {
+            player.weaponTimer -= dt;
+            if (player.weaponTimer < 0) { 
+                player.weaponTimer = 0; 
+                player.isShooting = false;
+            }
+        }
+
+        // Spawn Inimigos (Lógica Vampire Survivors)
+        spawnTimer += dt;
+        if (spawnTimer > (2.0 - Math.min(1.5, gameState.level * 0.05))) { // Spawna mais rápido com o tempo
+            spawnEnemy();
+            spawnTimer = 0;
+        }
+
+        // Movimento do Player
+        const moveSpeed = (keys.Shift ? 5.0 : 3.0) * dt; 
+        const rotSpeed = 2.5 * dt;
+
+        if (keys.w || keys.ArrowUp) {
+            if(worldMap[Math.floor(player.x + player.dirX * moveSpeed)][Math.floor(player.y)] === 0) 
+                player.x += player.dirX * moveSpeed;
+            if(worldMap[Math.floor(player.x)][Math.floor(player.y + player.dirY * moveSpeed)] === 0) 
+                player.y += player.dirY * moveSpeed;
+        }
+        if (keys.s || keys.ArrowDown) {
+            if(worldMap[Math.floor(player.x - player.dirX * moveSpeed)][Math.floor(player.y)] === 0) 
+                player.x -= player.dirX * moveSpeed;
+            if(worldMap[Math.floor(player.x)][Math.floor(player.y - player.dirY * moveSpeed)] === 0) 
+                player.y -= player.dirY * moveSpeed;
+        }
+        if (keys.d || keys.ArrowRight) {
+            const oldDirX = player.dirX;
+            player.dirX = player.dirX * Math.cos(-rotSpeed) - player.dirY * Math.sin(-rotSpeed);
+            player.dirY = oldDirX * Math.sin(-rotSpeed) + player.dirY * Math.cos(-rotSpeed);
+            const oldPlaneX = player.planeX;
+            player.planeX = player.planeX * Math.cos(-rotSpeed) - player.planeY * Math.sin(-rotSpeed);
+            player.planeY = oldPlaneX * Math.sin(-rotSpeed) + player.planeY * Math.cos(-rotSpeed);
+        }
+        if (keys.a || keys.ArrowLeft) {
+            const oldDirX = player.dirX;
+            player.dirX = player.dirX * Math.cos(rotSpeed) - player.dirY * Math.sin(rotSpeed);
+            player.dirY = oldDirX * Math.sin(rotSpeed) + player.dirY * Math.cos(rotSpeed);
+            const oldPlaneX = player.planeX;
+            player.planeX = player.planeX * Math.cos(rotSpeed) - player.planeY * Math.sin(rotSpeed);
+            player.planeY = oldPlaneX * Math.sin(rotSpeed) + player.planeY * Math.cos(rotSpeed);
+        }
+
+        // Update Sprites (AI e Colisão)
+        sprites = sprites.filter(s => !s.removed);
+
+        sprites.forEach(sprite => {
+            const dist = Math.hypot(player.x - sprite.x, player.y - sprite.y);
+
+            if (sprite.type === 'gem') {
+                if (dist < 0.8) {
+                    gainXp(10);
+                    sprite.removed = true;
+                }
+            } else {
+                // Inimigo AI: Persegue player
+                if (dist > 0.8) {
+                    const dx = (player.x - sprite.x) / dist;
+                    const dy = (player.y - sprite.y) / dist;
+                    
+                    // Colisão simples com parede para inimigos
+                    const nextX = sprite.x + dx * sprite.speed * dt;
+                    const nextY = sprite.y + dy * sprite.speed * dt;
+                    
+                    if (worldMap[Math.floor(nextX)][Math.floor(sprite.y)] === 0) sprite.x = nextX;
+                    if (worldMap[Math.floor(sprite.x)][Math.floor(nextY)] === 0) sprite.y = nextY;
+                } else {
+                    // Ataque
+                    takeDamage(sprite.damage * dt);
+                }
+            }
+        });
+    }
+
+    // --- Renderização ---
+
+    function draw() {
+        // 1. Chão e Teto
+        ctx.fillStyle = "#222"; 
+        ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+        ctx.fillStyle = "#444"; 
+        ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+
+        // Reset ZBuffer
+        zBuffer = new Array(canvas.width).fill(0);
+
+        // 2. Paredes (Raycasting)
+        for (let x = 0; x < canvas.width; x++) {
+            const cameraX = 2 * x / canvas.width - 1; 
+            const rayDirX = player.dirX + player.planeX * cameraX;
+            const rayDirY = player.dirY + player.planeY * cameraX;
+
+            let mapX = Math.floor(player.x);
+            let mapY = Math.floor(player.y);
+
+            const deltaDistX = Math.abs(1 / rayDirX);
+            const deltaDistY = Math.abs(1 / rayDirY);
+            
+            let stepX, stepY;
+            let sideDistX, sideDistY;
+            let side; 
+
+            if (rayDirX < 0) { stepX = -1; sideDistX = (player.x - mapX) * deltaDistX; }
+            else { stepX = 1; sideDistX = (mapX + 1.0 - player.x) * deltaDistX; }
+            if (rayDirY < 0) { stepY = -1; sideDistY = (player.y - mapY) * deltaDistY; }
+            else { stepY = 1; sideDistY = (mapY + 1.0 - player.y) * deltaDistY; }
+
+            let hit = 0;
+            while (hit === 0) {
+                if (sideDistX < sideDistY) { sideDistX += deltaDistX; mapX += stepX; side = 0; }
+                else { sideDistY += deltaDistY; mapY += stepY; side = 1; }
+                if (worldMap[mapX][mapY] > 0) hit = 1;
+            }
+
+            let perpWallDist;
+            if (side === 0) perpWallDist = (sideDistX - deltaDistX);
+            else            perpWallDist = (sideDistY - deltaDistY);
+
+            // Guardar para o sprite casting
+            zBuffer[x] = perpWallDist;
+
+            const lineHeight = Math.floor(canvas.height / perpWallDist);
+            let drawStart = -lineHeight / 2 + canvas.height / 2;
+            if (drawStart < 0) drawStart = 0;
+            let drawEnd = lineHeight / 2 + canvas.height / 2;
+            if (drawEnd >= canvas.height) drawEnd = canvas.height - 1;
+
+            const tileType = worldMap[mapX][mapY];
+            let color = (tileType === 1) ? '#cc4444' : (tileType === 2) ? '#44cc44' : '#4444cc';
+            if (side === 1) { // Escurecer lados
+                 // Simples conversão hex para escurecer
+                 if(tileType===1) color='#aa2222';
+                 else if(tileType===2) color='#22aa22';
+                 else color='#2222aa';
+            }
+
+            ctx.fillStyle = color;
+            ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
+        }
+
+        // 3. Sprites (Billboard)
+        // Ordenar do mais longe para o mais perto
+        const sortedSprites = [...sprites].map(sprite => {
+            return {
+                ...sprite,
+                dist: ((player.x - sprite.x)**2 + (player.y - sprite.y)**2) // dist squared
+            };
+        }).sort((a, b) => b.dist - a.dist);
+
+        for(let sprite of sortedSprites) {
+            // Posição relativa ao jogador
+            const spriteX = sprite.x - player.x;
+            const spriteY = sprite.y - player.y;
+
+            // Transformação inversa da matriz da câmera
+            const invDet = 1.0 / (player.planeX * player.dirY - player.dirX * player.planeY);
+            
+            const transformX = invDet * (player.dirY * spriteX - player.dirX * spriteY);
+            const transformY = invDet * (-player.planeY * spriteX + player.planeX * spriteY); // Profundidade Z dentro da tela
+
+            if (transformY > 0) {
+                const spriteScreenX = Math.floor((canvas.width / 2) * (1 + transformX / transformY));
+                
+                // Calcular altura/largura na tela
+                const spriteHeight = Math.abs(Math.floor(canvas.height / transformY)) * sprite.scale;
+                const spriteWidth = Math.abs(Math.floor(canvas.height / transformY)) * sprite.scale;
+                
+                let drawStartY = -spriteHeight / 2 + canvas.height / 2;
+                if(drawStartY < 0) drawStartY = 0;
+                let drawEndY = spriteHeight / 2 + canvas.height / 2;
+                if(drawEndY >= canvas.height) drawEndY = canvas.height - 1;
+                
+                let drawStartX = -spriteWidth / 2 + spriteScreenX;
+                let drawEndX = spriteWidth / 2 + spriteScreenX;
+
+                // Loop de desenho vertical (stripes) do sprite
+                // Normalmente iteramos sobre a textura, aqui simplificamos desenhando a imagem inteira recortada ou apenas se for visível
+                // Para performance e simplicidade em Canvas 2D, é melhor desenhar a imagem inteira de uma vez se ela não estiver obstruída pelo meio
+                // Mas num raycaster estrito, precisamos checar o ZBuffer coluna por coluna.
+                
+                // Otimização JS: Se o sprite estiver muito longe ou totalmente obstruido, pulamos.
+                // Verificação simplificada: checar o centro ou algumas faixas. 
+                // Para 100% de correção (estilo Doom), precisamos desenhar fatias da imagem.
+                
+                // Vamos usar o método de fatias para garantir que paredes escondam os inimigos
+                if (drawStartX < canvas.width && drawEndX > 0) {
+                    for(let stripe = Math.floor(drawStartX); stripe < Math.floor(drawEndX); stripe++) {
+                        if (stripe >= 0 && stripe < canvas.width) {
+                            // Se a fatia atual está na frente da parede
+                            if (transformY < zBuffer[stripe]) {
+                                // Calcular a coordenada X da textura
+                                const texX = Math.floor((stripe - (-spriteWidth / 2 + spriteScreenX)) * sprite.texture.width / spriteWidth);
+                                
+                                // Desenha a fatia vertical da imagem
+                                ctx.drawImage(
+                                    sprite.texture, 
+                                    texX, 0, 1, sprite.texture.height, // Source
+                                    stripe, drawStartY, 1, drawEndY - drawStartY // Destination
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. Arma
+        const bobX = Math.sin(Date.now() / 200) * (keys.w || keys.s ? 10 : 0);
+        const bobY = Math.abs(Math.cos(Date.now() / 200)) * (keys.w || keys.s ? 10 : 0);
+        const recoil = player.isShooting ? 20 : 0;
+        
+        // Posição base da arma
+        const gunW = 300;
+        const gunH = 300;
+        const gunX = (canvas.width / 2) - (gunW / 2) + bobX + (recoil * (Math.random() - 0.5));
+        const gunY = canvas.height - gunH + bobY + recoil;
+
+        ctx.drawImage(textures.gun, gunX, gunY, gunW, gunH);
+
+        // Muzzle Flash
+        if (player.isShooting && Math.random() > 0.5) {
+            ctx.fillStyle = `rgba(255, 255, 0, ${Math.random()})`;
+            ctx.beginPath();
+            ctx.arc(canvas.width/2 + (Math.random()*20-10), canvas.height/2 + (Math.random()*20-10), 30 + Math.random()*20, 0, Math.PI*2);
+            ctx.fill();
+        }
+        
+        // Mira
+        ctx.strokeStyle = '#0f0';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width/2 - 10, canvas.height/2);
+        ctx.lineTo(canvas.width/2 + 10, canvas.height/2);
+        ctx.moveTo(canvas.width/2, canvas.height/2 - 10);
+        ctx.lineTo(canvas.width/2, canvas.height/2 + 10);
+        ctx.stroke();
+    }
+
+    // --- Loop Principal ---
+    function gameLoop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const dt = (timestamp - lastTime) / 1000;
+        lastTime = timestamp;
+
+        const safeDt = Math.min(dt, 0.1);
+
+        update(safeDt);
+        draw();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Spawn inicial
+    spawnEnemy();
+    spawnEnemy();
+    spawnEnemy();
+
+    requestAnimationFrame(gameLoop);
+
+</script>
+</body>
+</html>

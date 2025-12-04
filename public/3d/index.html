@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FPS Engine Otimizado</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden; /* Previne rolagem */
+            touch-action: none; /* Previne zoom no mobile */
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            text-shadow: 2px 2px 0 #000;
+            pointer-events: none; /* Permite clicar através da UI */
+        }
+
+        .stat {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 5px;
+        }
+
+        #controls-hint {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: rgba(255,255,255,0.5);
+            font-size: 14px;
+            pointer-events: none;
+        }
+
+        /* Controles Mobile */
+        #mobile-controls {
+            display: none; /* Mostrado via JS se for touch */
+            position: absolute;
+            bottom: 40px;
+            width: 100%;
+            height: 150px;
+            z-index: 20;
+            pointer-events: none;
+        }
+        
+        .control-group {
+            position: absolute;
+            bottom: 10px;
+            pointer-events: auto;
+        }
+
+        #dpad { left: 20px; }
+        #actions { right: 20px; }
+
+        .btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            margin: 5px;
+            display: inline-block;
+            backdrop-filter: blur(4px);
+        }
+        
+        .btn:active { background: rgba(255, 215, 0, 0.4); }
+
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    
+    <div id="ui-layer">
+        <div class="stat">TEMPO: <span id="timer">00:00</span></div>
+        <div class="stat" style="font-size: 16px; color: #aaa;">FPS: <span id="fps">0</span></div>
+    </div>
+
+    <div id="controls-hint">
+        WASD ou Setas para Mover | Shift para Correr
+    </div>
+
+    <!-- Controles Touch para Mobile -->
+    <div id="mobile-controls">
+        <div id="dpad" class="control-group">
+            <div style="text-align:center;">
+                <div class="btn" id="btn-up"></div><br>
+                <div class="btn" id="btn-left"></div>
+                <div class="btn" id="btn-right"></div><br>
+                <div class="btn" id="btn-down"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Configuração Principal ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d', { alpha: false }); // Otimização: alpha false
+    const timerEl = document.getElementById('timer');
+    const fpsEl = document.getElementById('fps');
+
+    // Estado do Jogo
+    let lastTime = 0;
+    let timer = 0;
+    let frames = 0;
+    let lastFpsTime = 0;
+
+    // Mapa (1 = parede, 0 = vazio)
+    // Um mapa um pouco mais complexo para testar o raycasting
+    const mapWidth = 24;
+    const mapHeight = 24;
+    const worldMap = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,2,2,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,3,0,0,0,3,0,0,0,1],
+        [1,0,0,0,0,0,2,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,2,2,0,2,2,0,0,0,0,3,0,3,0,3,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,0,0,0,5,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,4,4,4,4,4,4,4,4,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    // Jogador
+    const player = {
+        x: 22,
+        y: 12,
+        dirX: -1,
+        dirY: 0,
+        planeX: 0,
+        planeY: 0.66,
+        moveSpeed: 0,
+        rotSpeed: 0
+    };
+
+    // Inputs
+    const keys = {
+        w: false, s: false, a: false, d: false,
+        ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
+        Shift: false
+    };
+
+    // --- Inicialização ---
+
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    // --- Input Handling (Corrigido para evitar "congelamento") ---
+    
+    // Desktop
+    window.addEventListener('keydown', (e) => {
+        if(keys.hasOwnProperty(e.key) || e.key === "Shift") {
+            keys[e.key] = true;
+        }
+    });
+
+    window.addEventListener('keyup', (e) => {
+        if(keys.hasOwnProperty(e.key) || e.key === "Shift") {
+            keys[e.key] = false;
+        }
+    });
+
+    // Mobile (Touch)
+    if('ontouchstart' in window) {
+        document.getElementById('mobile-controls').style.display = 'block';
+        document.getElementById('controls-hint').style.display = 'none';
+
+        const bindTouch = (id, key) => {
+            const btn = document.getElementById(id);
+            btn.addEventListener('touchstart', (e) => { e.preventDefault(); keys[key] = true; });
+            btn.addEventListener('touchend', (e) => { e.preventDefault(); keys[key] = false; });
+        };
+
+        bindTouch('btn-up', 'w');
+        bindTouch('btn-down', 's');
+        bindTouch('btn-left', 'a');
+        bindTouch('btn-right', 'd');
+    }
+
+    // --- Lógica do Jogo (Otimizada) ---
+
+    function update(dt) {
+        // Atualiza Timer
+        timer += dt;
+        const minutes = Math.floor(timer / 60).toString().padStart(2, '0');
+        const seconds = Math.floor(timer % 60).toString().padStart(2, '0');
+        timerEl.textContent = `${minutes}:${seconds}`;
+
+        // Velocidades ajustadas pelo Delta Time (dt) para suavidade independente do FPS
+        // Base: 60 FPS. Se FPS cair, movimento compensa.
+        const moveSpeed = (keys.Shift ? 5.0 : 3.0) * dt; 
+        const rotSpeed = 2.5 * dt;
+
+        // Movimento (W/S ou Setas Cima/Baixo)
+        if (keys.w || keys.ArrowUp) {
+            if(worldMap[Math.floor(player.x + player.dirX * moveSpeed)][Math.floor(player.y)] === 0) 
+                player.x += player.dirX * moveSpeed;
+            if(worldMap[Math.floor(player.x)][Math.floor(player.y + player.dirY * moveSpeed)] === 0) 
+                player.y += player.dirY * moveSpeed;
+        }
+        if (keys.s || keys.ArrowDown) {
+            if(worldMap[Math.floor(player.x - player.dirX * moveSpeed)][Math.floor(player.y)] === 0) 
+                player.x -= player.dirX * moveSpeed;
+            if(worldMap[Math.floor(player.x)][Math.floor(player.y - player.dirY * moveSpeed)] === 0) 
+                player.y -= player.dirY * moveSpeed;
+        }
+
+        // Rotação (A/D ou Setas Esquerda/Direita)
+        // Isso gira a câmera e o plano da câmera
+        if (keys.d || keys.ArrowRight) {
+            const oldDirX = player.dirX;
+            player.dirX = player.dirX * Math.cos(-rotSpeed) - player.dirY * Math.sin(-rotSpeed);
+            player.dirY = oldDirX * Math.sin(-rotSpeed) + player.dirY * Math.cos(-rotSpeed);
+            const oldPlaneX = player.planeX;
+            player.planeX = player.planeX * Math.cos(-rotSpeed) - player.planeY * Math.sin(-rotSpeed);
+            player.planeY = oldPlaneX * Math.sin(-rotSpeed) + player.planeY * Math.cos(-rotSpeed);
+        }
+        if (keys.a || keys.ArrowLeft) {
+            const oldDirX = player.dirX;
+            player.dirX = player.dirX * Math.cos(rotSpeed) - player.dirY * Math.sin(rotSpeed);
+            player.dirY = oldDirX * Math.sin(rotSpeed) + player.dirY * Math.cos(rotSpeed);
+            const oldPlaneX = player.planeX;
+            player.planeX = player.planeX * Math.cos(rotSpeed) - player.planeY * Math.sin(rotSpeed);
+            player.planeY = oldPlaneX * Math.sin(rotSpeed) + player.planeY * Math.cos(rotSpeed);
+        }
+    }
+
+    // --- Renderização (Raycasting DDA) ---
+
+    function draw() {
+        // Limpa tela (fundo + chão)
+        // Otimização: Preencher dois retângulos grandes é mais rápido que limpar e redesenhar tudo pixel a pixel
+        ctx.fillStyle = "#333"; // Teto
+        ctx.fillRect(0, 0, canvas.width, canvas.height / 2);
+        ctx.fillStyle = "#555"; // Chão
+        ctx.fillRect(0, canvas.height / 2, canvas.width, canvas.height / 2);
+
+        // Raycasting Loop
+        for (let x = 0; x < canvas.width; x++) {
+            // Calcular posição e direção do raio
+            // x da câmera vai de -1 a 1
+            const cameraX = 2 * x / canvas.width - 1; 
+            const rayDirX = player.dirX + player.planeX * cameraX;
+            const rayDirY = player.dirY + player.planeY * cameraX;
+
+            // Posição no mapa (inteira)
+            let mapX = Math.floor(player.x);
+            let mapY = Math.floor(player.y);
+
+            // Comprimento do raio da posição atual até o próximo lado x ou y
+            let sideDistX;
+            let sideDistY;
+
+            // Distância que o raio percorre para ir de um lado x/y ao próximo x/y
+            // Otimização: evitar divisão por zero não é estritamente necessário em JS (retorna Infinity), mas Math.abs é seguro
+            const deltaDistX = (rayDirX === 0) ? 1e30 : Math.abs(1 / rayDirX);
+            const deltaDistY = (rayDirY === 0) ? 1e30 : Math.abs(1 / rayDirY);
+            
+            let perpWallDist;
+
+            // Direção dos passos (+1 ou -1)
+            let stepX;
+            let stepY;
+
+            let hit = 0; // Colisão com parede?
+            let side; // 0 = Norte/Sul, 1 = Leste/Oeste
+
+            // Calcular step e sideDist inicial
+            if (rayDirX < 0) {
+                stepX = -1;
+                sideDistX = (player.x - mapX) * deltaDistX;
+            } else {
+                stepX = 1;
+                sideDistX = (mapX + 1.0 - player.x) * deltaDistX;
+            }
+            if (rayDirY < 0) {
+                stepY = -1;
+                sideDistY = (player.y - mapY) * deltaDistY;
+            } else {
+                stepY = 1;
+                sideDistY = (mapY + 1.0 - player.y) * deltaDistY;
+            }
+
+            // DDA Real
+            while (hit === 0) {
+                // Pula para o próximo quadrado do mapa (X ou Y)
+                if (sideDistX < sideDistY) {
+                    sideDistX += deltaDistX;
+                    mapX += stepX;
+                    side = 0;
+                } else {
+                    sideDistY += deltaDistY;
+                    mapY += stepY;
+                    side = 1;
+                }
+                // Checa colisão
+                if (worldMap[mapX][mapY] > 0) hit = 1;
+            }
+
+            // Calcula distância projetada na câmera (evita efeito olho de peixe)
+            if (side === 0) perpWallDist = (sideDistX - deltaDistX);
+            else            perpWallDist = (sideDistY - deltaDistY);
+
+            // Altura da linha na tela
+            const lineHeight = Math.floor(canvas.height / perpWallDist);
+
+            // Onde começar e terminar o desenho da parede (centralizado verticalmente)
+            let drawStart = -lineHeight / 2 + canvas.height / 2;
+            if (drawStart < 0) drawStart = 0;
+            let drawEnd = lineHeight / 2 + canvas.height / 2;
+            if (drawEnd >= canvas.height) drawEnd = canvas.height - 1;
+
+            // Escolhe a cor baseada no tipo de bloco
+            const tileType = worldMap[mapX][mapY];
+            let color;
+            switch(tileType) {
+                case 1: color = '#cc4444'; break; // Vermelho
+                case 2: color = '#44cc44'; break; // Verde
+                case 3: color = '#4444cc'; break; // Azul
+                case 4: color = '#aaaaaa'; break; // Branco
+                default: color = '#ffff00'; // Amarelo
+            }
+
+            // Sombra simples para paredes laterais (dá noção de 3D)
+            if (side === 1) {
+                // Escurece a cor
+                // Maneira rápida de escurecer hex: converter para rgb e diminuir ou usar filtro
+                // Aqui vamos usar um hack simples de opacidade preta por cima se quiser, 
+                // ou simplesmente mudar o estilo.
+                // Vamos apenas mudar o fillStyle diretamente para uma variante fixa para performance.
+                switch(tileType) {
+                    case 1: color = '#aa2222'; break;
+                    case 2: color = '#22aa22'; break;
+                    case 3: color = '#2222aa'; break;
+                    case 4: color = '#888888'; break;
+                    default: color = '#cccc00';
+                }
+            }
+
+            // Desenha a linha vertical
+            ctx.fillStyle = color;
+            ctx.fillRect(x, drawStart, 1, drawEnd - drawStart);
+        }
+    }
+
+    // --- Loop Principal ---
+
+    function gameLoop(timestamp) {
+        if (!lastTime) lastTime = timestamp;
+        const dt = (timestamp - lastTime) / 1000;
+        lastTime = timestamp;
+
+        // Calculo de FPS
+        if (timestamp - lastFpsTime >= 1000) {
+            fpsEl.textContent = frames;
+            frames = 0;
+            lastFpsTime = timestamp;
+        }
+        frames++;
+
+        // Limita o dt para evitar pulos gigantes se a aba ficar inativa (previne atravessar paredes)
+        const safeDt = Math.min(dt, 0.1);
+
+        update(safeDt);
+        draw();
+
+        requestAnimationFrame(gameLoop);
+    }
+
+    // Iniciar
+    requestAnimationFrame(gameLoop);
+
+</script>
+</body>
+</html>

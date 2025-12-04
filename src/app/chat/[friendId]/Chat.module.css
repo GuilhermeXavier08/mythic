@@ -1,0 +1,205 @@
+/* src/app/chat/[friendId]/Chat.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  /* REDUZIDO: Ocupa apenas 70% da altura da tela para não estourar */
+  height: 70vh; 
+  /* Centraliza na tela caso sobre espaço em cima/baixo */
+  margin: 2rem auto; 
+  max-width: 800px; /* Limita a largura para não ficar muito esticado */
+  width: 95%;
+  background-color: #2a2a2a;
+  color: #fff;
+  border-radius: 12px;
+  overflow: hidden; /* Garante que nada saia do container */
+  border: 1px solid #444;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+
+/* --- Cabeçalho --- */
+.header {
+  display: flex;
+  align-items: center;
+  padding: 1rem;
+  background-color: #353535;
+  border-bottom: 1px solid #444;
+  gap: 1rem;
+  flex-shrink: 0;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+}
+
+.friendInfo {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.avatarIcon {
+  color: #8b8b8b;
+}
+
+.friendName {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+/* --- Área de Mensagens --- */
+.messagesArea {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto; /* Scroll apenas aqui dentro */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.messageBubble {
+  max-width: 75%;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  position: relative;
+  word-wrap: break-word;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+/* --- LÓGICA DE LADOS E CORES --- */
+
+/* MINHA MENSAGEM (Enviador) -> Direita e Azul */
+.sent {
+  margin-left: auto; /* FORÇA IR PARA A DIREITA */
+  background-color: #2563eb; /* Azul forte */
+  color: white;
+  border-bottom-right-radius: 2px;
+  text-align: left;
+}
+
+/* MENSAGEM DO AMIGO (Recebedor) -> Esquerda e Cinza */
+.received {
+  margin-right: auto; /* FORÇA IR PARA A ESQUERDA */
+  background-color: #4b5563; /* Cinza */
+  color: #f3f4f6;
+  border-bottom-left-radius: 2px;
+  text-align: left;
+}
+
+.timestamp {
+  display: block;
+  font-size: 0.7rem;
+  margin-top: 0.4rem;
+  text-align: right;
+  opacity: 0.8;
+}
+
+/* --- Área de Input --- */
+.inputArea {
+  padding: 1rem;
+  background-color: #353535;
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  flex-shrink: 0;
+  border-top: 1px solid #444;
+}
+
+.input {
+  flex: 1;
+  padding: 0.8rem;
+  border-radius: 24px;
+  border: none;
+  background-color: #4a4a4a;
+  color: #fff;
+  outline: none;
+}
+
+.input:focus {
+  background-color: #555;
+}
+
+.sendButton {
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.sendButton:hover:not(:disabled) {
+  background-color: #1d4ed8;
+}
+
+.sendButton:disabled {
+  background-color: #555;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+/* Mantenha o container e header iguais... */
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 70vh; 
+  margin: 2rem auto; 
+  max-width: 800px;
+  width: 95%;
+  background-color: #2a2a2a;
+  color: #fff;
+  border-radius: 12px;
+  border: 1px solid #444;
+}
+
+/* ... headers ... */
+
+.messagesArea {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column; /* Importante ser column */
+  gap: 0.5rem;
+}
+
+.messageBubble {
+  max-width: 75%;
+  padding: 0.8rem 1rem;
+  border-radius: 12px;
+  position: relative;
+  word-wrap: break-word;
+}
+
+/* --- LOGICA DE CORES E LADOS CORRIGIDA --- */
+
+/* MINHA MENSAGEM -> Direita (Azul) */
+.sent {
+  align-self: flex-end; /* Joga para a direita */
+  background-color: #2563eb;
+  color: white;
+  border-bottom-right-radius: 2px;
+  text-align: left;
+}
+
+/* MENSAGEM DELE -> Esquerda (Cinza) */
+.received {
+  align-self: flex-start; /* Joga para a esquerda */
+  background-color: #4b5563; 
+  color: #f3f4f6;
+  border-bottom-left-radius: 2px;
+  text-align: left;
+}
+
+/* ... o resto do css igual ... */

@@ -311,7 +311,7 @@
 
 .secondaryButton {
     padding: 0.9rem 1.5rem;
-    background-color: transparent;
+    background-color: #9933FF;
     color: #ffffff;
     border: 1px solid #666666;
     border-radius: 6px;
@@ -321,12 +321,6 @@
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-}
-
-.secondaryButton:hover:not(:disabled) {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-    background-color: rgba(153, 51, 255, 0.1);
 }
 
 /* --- DANGER ZONE --- */

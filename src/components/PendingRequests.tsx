@@ -3,8 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation'; // <-- Importe o router
 import styles from './PendingRequests.module.css';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaUser } from 'react-icons/fa'; // <-- Importe FaUser
 
 interface FriendRequest {
   id: string;
@@ -12,19 +13,20 @@ interface FriendRequest {
     id: string;
     username: string;
     friendCode: number;
-    avatarUrl?: string | null; // <-- MUDANÇA 1: Adicionado avatarUrl
+    avatarUrl?: string | null;
   };
   createdAt: string;
 }
 
 export default function PendingRequests() {
   const { token } = useAuth();
+  const router = useRouter(); // <-- Inicialize o router
   const [requests, setRequests] = useState<FriendRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchRequests = async () => {
-    setLoading(true); // <-- Adicionado para garantir o estado de loading ao recarregar
+    setLoading(true);
     try {
       const response = await fetch('/api/friends/received-requests', {
         headers: token ? { Authorization: `Bearer ${token}` } : undefined,
@@ -34,7 +36,7 @@ export default function PendingRequests() {
       }
       const data = (await response.json()) as FriendRequest[];
       setRequests(data || []);
-      setError(null); // <-- Limpa erros anteriores
+      setError(null);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       setError(message);
@@ -44,7 +46,7 @@ export default function PendingRequests() {
   };
 
   useEffect(() => {
-    if (token) { // <-- Boa prática verificar o token antes de buscar
+    if (token) {
       fetchRequests();
     }
   }, [token]);
@@ -71,12 +73,16 @@ export default function PendingRequests() {
         );
       }
 
-      // Atualiza a lista após a ação (remove o item da UI imediatamente ou busca de novo)
-      fetchRequests(); // Recarrega a lista do servidor
+      fetchRequests();
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
       setError(message);
     }
+  };
+
+  // Função para ir ao perfil
+  const goToProfile = (username: string) => {
+    router.push(`/profile/${username}`);
   };
 
   if (loading) {
@@ -97,8 +103,6 @@ export default function PendingRequests() {
           {requests.map((request) => (
             <div key={request.id} className={styles.requestItem}>
               <div className={styles.userInfo}>
-
-                {/* // <-- MUDANÇA 2: Lógica do Avatar adicionada */}
                 <div className={styles.userAvatarWrapper}>
                   {request.sender.avatarUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -111,7 +115,6 @@ export default function PendingRequests() {
                     <FaUserCircle size={40} className={styles.userIcon} />
                   )}
                 </div>
-                {/* // <-- FIM DA MUDANÇA 2 */}
 
                 <div className={styles.userDetails}>
                   <span className={styles.username}>{request.sender.username}</span>
@@ -121,6 +124,29 @@ export default function PendingRequests() {
                 </div>
               </div>
               <div className={styles.actions}>
+                
+                {/* --- BOTÃO DE PERFIL --- */}
+                <button 
+                    onClick={() => goToProfile(request.sender.username)}
+                    title="Ver Perfil"
+                    style={{
+                        width: '35px',
+                        height: '35px',
+                        borderRadius: '50%',
+                        border: 'none',
+                        backgroundColor: '#444',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        cursor: 'pointer',
+                        marginRight: '10px'
+                    }}
+                >
+                    <FaUser size={16} />
+                </button>
+                {/* ----------------------- */}
+
                 <button
                   className={`${styles.actionButton} ${styles.accept}`}
                   onClick={() => handleRequest(request.id, 'ACCEPT')}

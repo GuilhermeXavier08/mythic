@@ -31,29 +31,64 @@ export default async function ProfilePage({ params }: { params: { username: stri
   if (!profile) notFound();
 
   const joinDate = new Date(profile.createdAt).toLocaleDateString('pt-BR', {
-    year: 'numeric',
     month: 'long',
-    day: 'numeric',
+    year: 'numeric',
   });
 
-  const { id: userId, bio } = profile;
+  const { id: userId } = profile;
 
   return (
-    <div className={styles.profileContainer}>
-      <ProfileHeader profileData={profile} />
+    <main className={styles.main}>
+      
+      {/* 1. BANNER DE FUNDO (Estilo Capa) */}
+      <div className={styles.banner}>
+        <div className={styles.bannerOverlay}></div>
+      </div>
 
-
-      <div className={styles.footerGrid}>
-        <div className={styles.gameLibraryBlock}>
-          <UserGameLibrary userId={userId} />
+      <div className={styles.contentContainer}>
+        
+        {/* 2. CABEÇALHO DO PERFIL (Com Avatar Sobreposto) */}
+        <div className={styles.headerSection}>
+           <ProfileHeader profileData={profile} />
+           
+           {/* Pequena barra de estatísticas/info abaixo do header */}
+           <div className={styles.statsBar}>
+              <div className={styles.statItem}>
+                <span>Membro desde</span>
+                <strong>{joinDate}</strong>
+              </div>
+              <div className={styles.statItem}>
+                <span>ID Mythic</span>
+                <strong>#{profile.friendCode}</strong>
+              </div>
+           </div>
         </div>
 
-        <div className={styles.friendsBlock}>
-          <UserFriendList userId={userId} joinDate={joinDate} />
+        {/* 3. GRID DE CONTEÚDO (Biblioteca e Amigos) */}
+        <div className={styles.dashboardGrid}>
           
-          <p className={styles.memberSinceText}>Membro desde: {joinDate}</p>
+          {/* Painel Esquerdo: Biblioteca */}
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <h2>Coleção de Jogos</h2>
+            </div>
+            <div className={styles.panelContent}>
+              <UserGameLibrary userId={userId} />
+            </div>
+          </section>
+
+          {/* Painel Direito: Amigos */}
+          <section className={styles.panel}>
+            <div className={styles.panelHeader}>
+              <h2>Lista de Amigos</h2>
+            </div>
+            <div className={styles.panelContent}>
+              <UserFriendList userId={userId} />
+            </div>
+          </section>
+
         </div>
       </div>
-    </div>
+    </main>
   );
 }

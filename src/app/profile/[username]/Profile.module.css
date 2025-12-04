@@ -1,124 +1,169 @@
-.profileContainer {
-    max-width: 1000px;
-    margin: 0 auto;
-    padding: 40px 20px;
-    color: #fff;
-    text-align: center;
+/* Layout Base */
+.main {
+  min-height: 100vh;
+  background-color: #0f0f0f; /* Fundo principal escuro */
+  color: #e0e0e0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
+/* --- BANNER (CAPA) --- */
+.banner {
+  height: 250px;
+  width: 100%;
+  /* Gradiente roxo elegante ou imagem se tiver */
+  background: radial-gradient(circle at center, #2a1a4a 0%, #0f0f0f 100%),
+              url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=2070&auto=format&fit=crop');
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.bannerOverlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to bottom, rgba(15,15,15,0.2), #0f0f0f);
+}
+
+/* Container Centralizado */
+.contentContainer {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 2rem 4rem 2rem;
+  position: relative;
+  z-index: 2;
+  margin-top: -80px; /* Faz o conteúdo subir para cima do banner */
+}
+
+/* --- SEÇÃO DO HEADER DO PERFIL --- */
 .headerSection {
-    padding: 40px;
-    border-radius: 12px;
-    margin-bottom: 40px;
-    background: #1a1a1a;
+  background: rgba(26, 26, 26, 0.8); /* Vidro escuro */
+  backdrop-filter: blur(10px);
+  border: 1px solid #333;
+  border-radius: 16px;
+  padding: 2rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.avatarWrapper {
-    margin: 0 auto 15px auto;
-    width: 120px;
-    height: 120px;
-    border-radius: 50%;
-    overflow: hidden;
-    border: 4px solid var(--primary-color, #6c5ce7);
+/* Ajustes para os componentes internos do ProfileHeader (Avatar, Nome) */
+/* Isso tenta forçar estilos nos filhos caso o componente ProfileHeader não tenha CSS isolado */
+.headerSection :global(img) {
+  border: 4px solid #0f0f0f;
+  box-shadow: 0 0 20px rgba(112, 0, 255, 0.4);
 }
 
-.profileAvatar {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+.headerSection :global(h1), 
+.headerSection :global(.username) {
+  font-size: 2.5rem;
+  font-weight: 800;
+  margin-top: 1rem;
+  color: #fff;
 }
 
-.defaultProfileIcon {
-    width: 100%;
-    height: 100%;
-    color: #6c5ce7;
-    background: #2a2a2a;
+.headerSection :global(button) {
+  margin-top: 1rem;
 }
 
-/* Ensure avatar images and default icon are circular */
-.profileAvatar, .defaultProfileIcon {
-    border-radius: 50%;
+/* Barra de Estatísticas */
+.statsBar {
+  display: flex;
+  gap: 3rem;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #333;
+  width: 100%;
+  justify-content: center;
 }
 
-.username {
-    font-size: 2.5em;
-    margin: 10px 0 5px 0;
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.idCode {
-    color: #aaa;
-    margin-bottom: 20px;
+.statItem span {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: #888;
+  letter-spacing: 1px;
+  margin-bottom: 0.2rem;
 }
 
-.editButton {
-    padding: 10px 20px;
-    background: var(--primary-color, #6c5ce7);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: background 0.3s;
+.statItem strong {
+  font-size: 1.1rem;
+  color: #fff;
+  font-weight: 600;
 }
 
-.editButton:hover {
-    background: #5a4ac3;
+/* --- GRID DE PAINÉIS (Jogos e Amigos) --- */
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: 2fr 1fr; /* Coluna da esquerda (Jogos) mais larga */
+  gap: 2rem;
 }
 
-.bioSection {
-    text-align: left;
-    /* Limit width and center the bio block */
-    max-width: 700px;
-    margin: 20px auto 40px auto;
-    padding: 30px;
-    background: #1a1a1a;
-    border-radius: 12px;
-    border: 1px solid #333;
+.panel {
+  background-color: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
-.bioSection h2 {
-    font-size: 1.5em;
-    margin-bottom: 10px;
-    color: var(--primary-color, #6c5ce7);
+.panelHeader {
+  padding: 1.5rem;
+  border-bottom: 1px solid #2a2a2a;
+  background-color: #1f1f1f;
 }
 
-.bioText {
-    font-size: 1.1em;
-    line-height: 1.6;
-    color: #ccc;
-    /* Ensure long bios wrap and preserve line breaks */
-    word-wrap: break-word;
-    overflow-wrap: break-word;
-    white-space: pre-wrap;
-    display: block;
+.panelHeader h2 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.footerGrid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    max-width: 800px;
-    margin: 0 auto;
+/* Detalhe roxo no título */
+.panelHeader h2::before {
+  content: '';
+  display: block;
+  width: 4px;
+  height: 18px;
+  background-color: #7000ff;
+  border-radius: 2px;
 }
 
-.gameLibraryBlock, .friendsBlock {
-    padding: 30px;
-    background: #1a1a1a;
-    border-radius: 12px;
-    border: 1px solid #333;
-    text-align: left;
+.panelContent {
+  padding: 1.5rem;
 }
 
-.gameLibraryBlock h2, .friendsBlock h2 {
-    font-size: 1.4em;
-    margin-bottom: 15px;
-    color: #fff;
-}
+/* --- RESPONSIVIDADE --- */
+@media (max-width: 900px) {
+  .dashboardGrid {
+    grid-template-columns: 1fr; /* Vira coluna única no mobile */
+  }
 
-.memberSinceText {
-    color: #a7a7a7;
+  .statsBar {
+    gap: 1.5rem;
+  }
+  
+  .contentContainer {
+    margin-top: -40px;
+    padding: 0 1rem 2rem 1rem;
+  }
+  
+  .headerSection {
+    padding: 1.5rem;
+  }
 }
-
-.loading { color: #a7a7a7; }
-.error { color: #ff6b6b; }

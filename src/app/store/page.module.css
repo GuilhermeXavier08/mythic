@@ -1,29 +1,177 @@
 /* src/app/store/page.module.css */
+
 .page {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
   padding: 2rem;
+  min-height: 100vh;
+  background-color: #0f0f0f;
+  color: #e0e0e0;
+  width: 100%;
+}
+
+.pageHeader {
+  max-width: 1440px;
+  margin: 0 auto 2rem auto;
+  border-bottom: 1px solid #1f1f1f;
+  padding-bottom: 1rem;
 }
 
 .title {
   font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid var(--primary-color);
-  padding-bottom: 0.5rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 0.5rem;
 }
 
+.subtitle { color: #777; font-size: 0.9rem; }
+
+/* Layout Grid */
+.storeLayout {
+  display: flex;
+  gap: 2rem;
+  max-width: 1440px;
+  margin: 0 auto;
+  align-items: flex-start;
+}
+
+/* Sidebar */
+.filtersColumn {
+  flex: 0 0 260px;
+  background-color: #1a1a1a;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 1.5rem;
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.filtersHeader {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #333;
+}
+.filtersHeader h3 { color: #fff; font-size: 1.1rem; }
+.clearButton { background: none; border: none; color: #7000ff; font-size: 0.85rem; cursor: pointer; font-weight: 600; }
+
+.scrollableFilters { overflow-y: auto; padding-right: 5px; }
+.scrollableFilters::-webkit-scrollbar { width: 4px; }
+.scrollableFilters::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+.filterGroup { margin-bottom: 1.5rem; }
+.filterLabel { display: block; font-size: 0.8rem; font-weight: 700; color: #888; margin-bottom: 0.6rem; text-transform: uppercase; }
+
+.input, .select {
+  width: 100%; padding: 10px 12px; background-color: #0f0f0f; border: 1px solid #333;
+  border-radius: 6px; color: #fff; font-size: 0.9rem; outline: none; transition: border 0.2s;
+}
+.input:focus, .select:focus { border-color: #7000ff; }
+
+.priceInputs { display: flex; align-items: center; gap: 8px; }
+.separator { color: #555; }
+
+/* Checkboxes */
+.checkboxGroup { display: flex; flex-direction: column; gap: 8px; }
+.checkboxLabel { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #aaa; cursor: pointer; }
+.checkboxLabel:hover { color: #fff; }
+.checkboxLabel input { display: none; }
+.checkmark { width: 18px; height: 18px; background-color: #0f0f0f; border: 1px solid #444; border-radius: 4px; position: relative; }
+.checkboxLabel input:checked + .checkmark { background-color: #7000ff; border-color: #7000ff; }
+.checkboxLabel input:checked + .checkmark::after {
+  content: '✔'; position: absolute; color: white; font-size: 10px;
+  top: 50%; left: 50%; transform: translate(-50%, -50%);
+}
+
+/* Área de Jogos */
+.gamesColumn { flex: 1; }
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1.5rem;
+  width: 100%;
 }
 
-.loading,
-.error {
-  font-size: 1.25rem;
-  text-align: center;
-  margin-top: 4rem;
-  color: #a7a7a7;
+/* --- CARD WRAPPER LIMPO --- */
+.cardWrapper {
+  display: block;
+  position: relative;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  background-color: #1a1a1a; /* Fundo escuro evita piscar branco */
+  border-radius: 12px;
+  overflow: hidden; /* Garante que a imagem não vaze */
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  border: 1px solid transparent;
+  
+  /* Fix para flickering em alguns browsers */
+  transform: translateZ(0);
+}
+
+.cardWrapper:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(112, 0, 255, 0.2);
+  border-color: #7000ff;
+  z-index: 5;
+}
+
+/* Classe aplicada diretamente no componente Next/Image */
+.cardImage {
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.cardWrapper:hover .cardImage {
+  transform: scale(1.05);
+}
+
+/* Overlay */
+.cardOverlay {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.95) 10%, transparent);
+  padding: 2rem 1rem 1rem 1rem;
+  z-index: 2;
+  opacity: 0; /* Começa invisível */
+  transition: opacity 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardWrapper:hover .cardOverlay {
+  opacity: 1; /* Aparece no hover */
+}
+
+.cardTitle {
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  margin-bottom: 0.2rem;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+.cardPrice {
+  color: #7000ff;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+}
+
+/* Utils */
+.loadingContainer { height: 300px; display: flex; justify-content: center; align-items: center; }
+.spinner {
+  width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+  border-top-color: #7000ff; border-radius: 50%; animation: spin 1s linear infinite;
+}
+.noResults {
+  grid-column: 1 / -1; padding: 3rem; text-align: center;
+  background: #1a1a1a; border-radius: 12px; color: #888; border: 1px dashed #333;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 900px) {
+  .storeLayout { flex-direction: column; }
+  .filtersColumn { width: 100%; position: static; margin-bottom: 2rem; }
+  .grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }

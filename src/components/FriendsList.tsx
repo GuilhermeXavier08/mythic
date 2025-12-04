@@ -1,10 +1,11 @@
+// src/components/FriendsList.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Import para navegação
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import styles from './FriendsList.module.css';
-import { FaUserCircle, FaCommentDots } from 'react-icons/fa'; // Adicionado ícone de chat
+import { FaUserCircle, FaCommentDots, FaUser } from 'react-icons/fa'; // <-- Importe FaUser
 
 interface Friend {
   id: string;
@@ -15,7 +16,7 @@ interface Friend {
 
 export default function FriendsList() {
   const { token } = useAuth();
-  const router = useRouter(); // Hook de navegação
+  const router = useRouter();
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -73,10 +74,13 @@ export default function FriendsList() {
     }
   };
 
-  // Função para ir ao chat
   const handleOpenChat = (friendId: string) => {
-    // Redireciona para a rota de chat (ajuste a URL conforme sua estrutura)
     router.push(`/chat/${friendId}`);
+  };
+
+  // Função para ir ao perfil
+  const goToProfile = (username: string) => {
+    router.push(`/profile/${username}`);
   };
 
   if (loading) {
@@ -113,9 +117,19 @@ export default function FriendsList() {
               </div>
             </div>
             
-            {/* Área de Ações */}
             <div className={styles.actions}>
-              {/* Botão de Chat Circular */}
+              
+              {/* --- BOTÃO DE PERFIL --- */}
+              <button 
+                className={styles.chatButton} // Reutilizando a classe chatButton para manter o estilo redondo
+                onClick={() => goToProfile(friend.username)}
+                title="Ver Perfil"
+                style={{ marginRight: '8px' }} // Espaçamento extra
+              >
+                <FaUser size={18} />
+              </button>
+              {/* ----------------------- */}
+
               <button 
                 className={styles.chatButton}
                 onClick={() => handleOpenChat(friend.id)}

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MineClone JS - Update Tools</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: 'Courier New', Courier, monospace; user-select: none; }
+        
+        /* UI Overlay */
+        #ui-container {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* Crosshair */
+        #crosshair {
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 20px; height: 20px;
+            background-color: transparent;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+        #crosshair::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            width: 4px; height: 4px; background: white;
+            transform: translate(-50%, -50%);
+        }
+
+        /* Mining Progress */
+        #mining-bar-container {
+            position: absolute;
+            top: 53%; left: 50%;
+            transform: translateX(-50%);
+            width: 100px; height: 10px;
+            background: rgba(0,0,0,0.5);
+            border: 2px solid #fff;
+            border-radius: 5px;
+            display: none; /* Hidden unless mining */
+        }
+        #mining-bar-fill {
+            width: 0%; height: 100%;
+            background: #4caf50;
+        }
+
+        /* Hotbar */
+        #hotbar {
+            align-self: center;
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 10px;
+            pointer-events: auto;
+        }
+        .slot {
+            width: 50px; height: 50px;
+            border: 3px solid #555;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            font-weight: bold;
+            position: relative;
+            cursor: pointer;
+        }
+        .slot.active { border-color: white; transform: scale(1.1); }
+        .slot span { position: absolute; bottom: 2px; right: 2px; font-size: 12px; }
+        .slot-icon { width: 30px; height: 30px; display: block; border: 1px solid rgba(0,0,0,0.2); }
+
+        /* Stats */
+        #stats {
+            position: absolute; bottom: 90px; left: 50%;
+            transform: translateX(-50%);
+            display: flex; gap: 20px;
+            color: white; text-shadow: 2px 2px 0 #000;
+        }
+        
+        #info {
+            padding: 10px; color: white; text-shadow: 1px 1px 0 #000;
+            background: rgba(0,0,0,0.2);
+            pointer-events: none;
+        }
+        
+        #crafting-menu {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #c6c6c6;
+            border: 4px solid #373737;
+            padding: 20px;
+            display: none;
+            pointer-events: auto;
+            min-width: 300px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .recipe {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #8b8b8b; margin: 5px 0; padding: 10px;
+            border: 2px solid #373737; cursor: pointer;
+        }
+        .recipe:hover { background: #a0a0a0; }
+
+        #message {
+            position: absolute; top: 20%; width: 100%; text-align: center;
+            color: yellow; font-size: 20px; font-weight: bold;
+            text-shadow: 2px 2px 0 #000; opacity: 0; transition: opacity 0.5s;
+        }
+
+        #start-screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center; color: white;
+            z-index: 100;
+        }
+        button.btn-main {
+            padding: 15px 30px; font-size: 20px; cursor: pointer;
+            background: #4caf50; color: white; border: none; border-radius: 5px; margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="ui-container">
+        <div id="info">
+            <b>MineClone JS</b><br>
+            Segure CLIQUE ESQ para quebrar (use ferramentas!)<br>
+            E: Inventário/Crafting | 1-6: Atalhos
+        </div>
+        <div id="message"></div>
+        <div id="mining-bar-container"><div id="mining-bar-fill"></div></div>
+        <div id="stats">
+            <div class="stat-bar">❤️ <span id="health-val">100</span></div>
+            <div class="stat-bar">🍗 <span id="hunger-val">100</span></div>
+        </div>
+        <div id="hotbar"></div>
+    </div>
+    
+    <div id="crosshair"></div>
+
+    <div id="crafting-menu">
+        <h2>Crafting</h2>
+        <div id="recipe-list"></div>
+        <div style="text-align: center; margin-top: 10px;">'E' para fechar</div>
+    </div>
+
+    <div id="start-screen">
+        <h1>MINECLONE JS</h1>
+        <p>Atualização: Ferramentas e Mineração</p>
+        <button class="btn-main" id="btn-start">JOGAR</button>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        // --- CONSTANTES E DADOS ---
+        const ITEMS = {
+            wood: { color: '#3e2723', name: 'Madeira' },
+            stone: { color: '#757575', name: 'Pedra' },
+            dirt: { color: '#5d4037', name: 'Terra' },
+            grass: { color: '#4caf50', name: 'Grama' },
+            plank: { color: '#d7ccc8', name: 'Tábua' },
+            stick: { color: '#8d6e63', name: 'Graveto' }, // Item lógico
+            pork: { color: '#ffaaaa', name: 'Carne Crua' },
+            apple: { color: '#ff0000', name: 'Maçã' },
+            pickaxe_wood: { color: '#8d6e63', icon: '⛏️', name: 'Picareta (Mad)', type: 'tool', toolType: 'pickaxe', speed: 3 },
+            axe_wood: { color: '#8d6e63', icon: '🪓', name: 'Machado (Mad)', type: 'tool', toolType: 'axe', speed: 3 }
+        };
+
+        const BLOCKS = {
+            wood: { hardness: 2.0, effectiveTool: 'axe' },
+            leaves: { hardness: 0.2, effectiveTool: 'none' },
+            stone: { hardness: 3.0, effectiveTool: 'pickaxe', reqTool: true }, // reqTool: precisa da ferramenta para dropar
+            dirt: { hardness: 0.6, effectiveTool: 'shovel' },
+            grass: { hardness: 0.7, effectiveTool: 'shovel' },
+            plank: { hardness: 1.5, effectiveTool: 'axe' }
+        };
+
+        const RECIPES = [
+            { result: 'plank', count: 4, cost: { 'wood': 1 } },
+            { result: 'stick', count: 4, cost: { 'plank': 2 } },
+            { result: 'axe_wood', count: 1, cost: { 'stick': 2, 'plank': 3 } },
+            { result: 'pickaxe_wood', count: 1, cost: { 'stick': 2, 'plank': 3 } }
+        ];
+
+        // --- THREE.JS SETUP ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 20, 50);
+
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: false });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+
+        // Highlight Box (Outline)
+        const outlineGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(1.01, 1.01, 1.01));
+        const outlineMat = new THREE.LineBasicMaterial({ color: 0x000000, linewidth: 2 });
+        const outlineMesh = new THREE.LineSegments(outlineGeo, outlineMat);
+        scene.add(outlineMesh);
+        outlineMesh.visible = false;
+
+        // --- GAME STATE ---
+        const worldSize = 40;
+        const voxels = new Map(); 
+        const objects = []; 
+        let mobs = [];
+        
+        const player = {
+            height: 1.8,
+            speed: 5.0,
+            jumpForce: 9.0,
+            velocity: new THREE.Vector3(),
+            onGround: false,
+            health: 100,
+            hunger: 100,
+            inventory: { 'wood': 0, 'stone': 0 }, // Init inventory
+            hotbar: ['axe_wood', 'pickaxe_wood', 'wood', 'stone', 'pork'], // Starting items for debug/fun
+            selectedSlot: 0,
+            mining: { active: false, progress: 0, target: null }
+        };
+
+        // --- TEXTURAS ---
+        function createTexture(color, noiseIntensity = 20) {
+            const size = 64;
+            const canvas = document.createElement('canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = color;
+            ctx.fillRect(0, 0, size, size);
+            
+            for(let i=0; i<size*size/2; i++) {
+                const x = Math.floor(Math.random() * size);
+                const y = Math.floor(Math.random() * size);
+                ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`;
+                ctx.fillRect(x,y,1,1);
+                ctx.fillStyle = `rgba(255,255,255,${Math.random() * 0.1})`;
+                ctx.fillRect(x,y,1,1);
+            }
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.magFilter = THREE.NearestFilter;
+            return tex;
+        }
+
+        const materials = {};
+        for(const [key, data] of Object.entries(ITEMS)) {
+            if(data.type === 'tool' || key === 'stick') continue; // Não tem bloco
+            materials[key] = new THREE.MeshLambertMaterial({ map: createTexture(data.color) });
+        }
+        // Special textures
+        materials.leaves = new THREE.MeshLambertMaterial({ map: createTexture('#2e7d32', 40), transparent: true, opacity: 0.9 });
+        materials.pig = new THREE.MeshLambertMaterial({ color: 0xffaaaa });
+
+        // --- GERAÇÃO ---
+        function addBlock(x, y, z, type, addToScene = true) {
+            const key = `${x},${y},${z}`;
+            if (voxels.has(key)) return;
+
+            voxels.set(key, type);
+
+            if (addToScene) {
+                let mat = materials[type] || materials.dirt;
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), mat);
+                mesh.position.set(x, y, z);
+                mesh.name = key;
+                mesh.userData = { type: type };
+                scene.add(mesh);
+                objects.push(mesh);
+            }
+        }
+
+        function generateWorld() {
+            for (let x = -worldSize/2; x < worldSize/2; x++) {
+                for (let z = -worldSize/2; z < worldSize/2; z++) {
+                    let h = Math.floor(Math.sin(x * 0.1) * 2 + Math.cos(z * 0.1) * 2);
+                    if(h < 0) h = 0;
+                    
+                    addBlock(x, h, z, 'grass');
+                    
+                    // Solo superficial
+                    addBlock(x, h-1, z, 'dirt');
+                    addBlock(x, h-2, z, 'dirt');
+                    addBlock(x, h-3, z, 'dirt');
+
+                    // Pedra Profunda (Correção do usuário)
+                    for(let d=4; d<=15; d++) {
+                        addBlock(x, h-d, z, 'stone');
+                    }
+                    // Bedrock placeholder
+                    addBlock(x, h-16, z, 'stone'); 
+
+                    if (x > -5 && x < 5 && z > -5 && z < 5) continue; 
+                    if (Math.random() < 0.02) createTree(x, h + 1, z);
+                }
+            }
+        }
+
+        function createTree(x, y, z) {
+            const height = 4 + Math.floor(Math.random() * 2);
+            for(let i=0; i<height; i++) addBlock(x, y+i, z, 'wood');
+            for(let lx=x-2; lx<=x+2; lx++) {
+                for(let ly=y+height-2; ly<=y+height+1; ly++) {
+                    for(let lz=z-2; lz<=z+2; lz++) {
+                        if (voxels.has(`${lx},${ly},${lz}`)) continue;
+                        if (Math.abs(lx-x) + Math.abs(ly-(y+height)) + Math.abs(lz-z) < 3.2) {
+                             addBlock(lx, ly, lz, 'leaves');
+                        }
+                    }
+                }
+            }
+        }
+
+        // --- SISTEMAS DE JOGO ---
+        function updateHotbarUI() {
+            const container = document.getElementById('hotbar');
+            container.innerHTML = '';
+            player.hotbar.forEach((itemKey, idx) => {
+                const count = player.inventory[itemKey] || 0;
+                const itemData = ITEMS[itemKey] || { color: '#000', icon: '?' };
+                const div = document.createElement('div');
+                div.className = `slot ${idx === player.selectedSlot ? 'active' : ''}`;
+                
+                let content = '';
+                if(itemData.icon) {
+                    content = `<div style="font-size:24px;">${itemData.icon}</div>`;
+                } else {
+                    content = `<div class="slot-icon" style="background:${itemData.color}"></div>`;
+                }
+                
+                // Show count only if not a tool
+                if(!itemData.type) {
+                     content += `<span>${count}</span>`;
+                }
+
+                div.innerHTML = content;
+                div.onclick = () => { player.selectedSlot = idx; updateHotbarUI(); };
+                container.appendChild(div);
+            });
+        }
+
+        function addItem(type, count) {
+            if (!player.inventory[type]) player.inventory[type] = 0;
+            player.inventory[type] += count;
+            showMessage(`+${count} ${ITEMS[type]?.name || type}`);
+            updateHotbarUI();
+            updateCraftingUI();
+        }
+
+        function showMessage(msg) {
+            const el = document.getElementById('message');
+            el.innerText = msg;
+            el.style.opacity = 1;
+            setTimeout(() => el.style.opacity = 0, 1500);
+        }
+
+        function updateCraftingUI() {
+            const list = document.getElementById('recipe-list');
+            list.innerHTML = '';
+            RECIPES.forEach((r, idx) => {
+                let costStr = Object.entries(r.cost).map(([k,v]) => `${v} ${ITEMS[k]?.name}`).join(', ');
+                const div = document.createElement('div');
+                div.className = 'recipe';
+                div.innerHTML = `<div><b>${ITEMS[r.result]?.name || r.result} x${r.count}</b><br><small>${costStr}</small></div><button>Criar</button>`;
+                div.onclick = () => craft(idx);
+                list.appendChild(div);
+            });
+        }
+
+        function craft(index) {
+            const r = RECIPES[index];
+            for(let k in r.cost) if((player.inventory[k] || 0) < r.cost[k]) return;
+            for(let k in r.cost) player.inventory[k] -= r.cost[k];
+            
+            // Se for ferramenta, adicionar a hotbar se tiver espaço
+            if(ITEMS[r.result].type === 'tool') {
+                if(player.hotbar.length < 6) player.hotbar.push(r.result);
+                else player.hotbar[player.selectedSlot] = r.result; // Substituir atual se cheio
+            } else {
+                addItem(r.result, r.count);
+            }
+            updateHotbarUI();
+        }
+
+        // --- INPUT E CONTROLE ---
+        const keys = {};
+        const raycaster = new THREE.Raycaster();
+        const center = new THREE.Vector2(0, 0);
+        let isLocked = false;
+
+        document.getElementById('btn-start').addEventListener('click', () => {
+            document.body.requestPointerLock();
+        });
+        document.addEventListener('pointerlockchange', () => {
+            isLocked = !!document.pointerLockElement;
+            document.getElementById('start-screen').style.display = isLocked ? 'none' : 'flex';
+            document.getElementById('crafting-menu').style.display = 'none';
+        });
+
+        document.addEventListener('keydown', (e) => {
+            keys[e.code] = true;
+            if(e.key >= 1 && e.key <= 6) {
+                player.selectedSlot = parseInt(e.key) - 1;
+                // Ensure hotbar array padding
+                while(player.hotbar.length < 6) player.hotbar.push(null);
+                updateHotbarUI();
+            }
+            if(e.code === 'KeyE' && isLocked) {
+                document.exitPointerLock();
+                document.getElementById('crafting-menu').style.display = 'block';
+                updateCraftingUI();
+            } else if (e.code === 'KeyE' && !isLocked) {
+                document.body.requestPointerLock();
+            }
+        });
+        document.addEventListener('keyup', (e) => keys[e.code] = false);
+
+        // Mouse Look
+        const euler = new THREE.Euler(0, 0, 0, 'YXZ');
+        document.addEventListener('mousemove', (e) => {
+            if (!isLocked) return;
+            euler.setFromQuaternion(camera.quaternion);
+            euler.y -= e.movementX * 0.002;
+            euler.x -= e.movementY * 0.002;
+            euler.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, euler.x));
+            camera.quaternion.setFromEuler(euler);
+        });
+
+        // Mineração e Construção
+        let isMouseDown = false;
+        let mouseButton = -1;
+
+        document.addEventListener('mousedown', (e) => {
+            if(!isLocked) return;
+            isMouseDown = true;
+            mouseButton = e.button;
+
+            if (mouseButton === 2) { // Right click (Place/Eat)
+                 handleRightClick();
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            isMouseDown = false;
+            player.mining.active = false;
+            player.mining.progress = 0;
+            document.getElementById('mining-bar-container').style.display = 'none';
+        });
+
+        function handleRightClick() {
+            const itemKey = player.hotbar[player.selectedSlot];
+            if(!itemKey) return;
+
+            // Comer
+            if(itemKey === 'pork' || itemKey === 'apple') {
+                if(player.inventory[itemKey] > 0) {
+                    player.inventory[itemKey]--;
+                    player.hunger = Math.min(100, player.hunger + 20);
+                    player.health = Math.min(100, player.health + 5);
+                    updateHotbarUI();
+                    showMessage("Nhac!");
+                }
+                return;
+            }
+
+            // Construir
+            if(ITEMS[itemKey].type === 'tool') return; // Não constrói com ferramentas
+
+            raycaster.setFromCamera(center, camera);
+            const intersects = raycaster.intersectObjects(objects);
+            if(intersects.length > 0 && intersects[0].distance < 6) {
+                const hit = intersects[0];
+                const p = hit.point.add(hit.face.normal.multiplyScalar(0.5));
+                const bx = Math.floor(p.x), by = Math.floor(p.y), bz = Math.floor(p.z);
+                
+                // Anti-stuck (não colocar no pé)
+                const px = Math.floor(camera.position.x);
+                const py = Math.floor(camera.position.y);
+                const pz = Math.floor(camera.position.z);
+                if(bx === px && bz === pz && (by === py || by === py-1)) return;
+
+                if(player.inventory[itemKey] > 0) {
+                    addBlock(bx, by, bz, itemKey);
+                    player.inventory[itemKey]--;
+                    updateHotbarUI();
+                }
+            }
+        }
+
+        // --- LOOP PRINCIPAL ---
+        let prevTime = performance.now();
+        generateWorld();
+        updateHotbarUI();
+        camera.position.set(0, 20, 0);
+
+        // Luzes
+        const ambLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambLight);
+        const sun = new THREE.DirectionalLight(0xffffff, 0.7);
+        sun.position.set(50, 100, 50);
+        scene.add(sun);
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            const time = performance.now();
+            const delta = Math.min((time - prevTime) / 1000, 0.1);
+            prevTime = time;
+
+            if (isLocked) {
+                // 1. Raycast para Highlight e Mineração
+                raycaster.setFromCamera(center, camera);
+                const intersects = raycaster.intersectObjects(objects);
+                
+                if (intersects.length > 0 && intersects[0].distance < 6) {
+                    const hit = intersects[0];
+                    const obj = hit.object;
+
+                    // Highlight
+                    outlineMesh.visible = true;
+                    outlineMesh.position.copy(obj.position);
+
+                    // Mineração (Segurando Left Click)
+                    if (isMouseDown && mouseButton === 0) {
+                        const blockType = obj.userData.type;
+                        const blockData = BLOCKS[blockType] || BLOCKS.dirt;
+                        const heldItem = player.hotbar[player.selectedSlot];
+                        const toolData = ITEMS[heldItem];
+
+                        // Calcular velocidade
+                        let speed = 1;
+                        if(toolData && toolData.type === 'tool' && toolData.toolType === blockData.effectiveTool) {
+                            speed = toolData.speed;
+                        } else {
+                            // Penalidade se usar ferramenta errada (opcional, aqui deixei normal)
+                        }
+
+                        // Inicializar mineração
+                        if (player.mining.target !== obj.uuid) {
+                            player.mining.target = obj.uuid;
+                            player.mining.progress = 0;
+                        }
+
+                        player.mining.progress += delta * speed;
+                        
+                        // Atualizar UI
+                        const pct = Math.min(100, (player.mining.progress / blockData.hardness) * 100);
+                        document.getElementById('mining-bar-container').style.display = 'block';
+                        document.getElementById('mining-bar-fill').style.width = pct + '%';
+
+                        // Quebrou?
+                        if (player.mining.progress >= blockData.hardness) {
+                            scene.remove(obj);
+                            objects.splice(objects.indexOf(obj), 1);
+                            voxels.delete(obj.name);
+                            player.mining.active = false;
+                            player.mining.progress = 0;
+                            document.getElementById('mining-bar-container').style.display = 'none';
+
+                            // Drop Lógica
+                            let drops = true;
+                            if (blockData.reqTool) {
+                                // Se precisa de ferramenta (Pedra precisa Picareta)
+                                if (!toolData || toolData.toolType !== blockData.effectiveTool) {
+                                    drops = false;
+                                    showMessage("Precisa de ferramenta!");
+                                }
+                            }
+                            
+                            if (drops) {
+                                let dropItem = blockType === 'grass' ? 'dirt' : blockType;
+                                if(blockType === 'leaves') dropItem = Math.random() > 0.8 ? 'apple' : (Math.random() > 0.5 ? 'stick' : null);
+                                if(blockType === 'stone') dropItem = 'stone'; // Simplificado: dropa stone mesmo (cobble)
+
+                                if(dropItem) addItem(dropItem, 1);
+                            }
+                        }
+                    } else {
+                        // Soltou mouse ou parou de olhar
+                         player.mining.progress = 0;
+                         document.getElementById('mining-bar-container').style.display = 'none';
+                    }
+
+                } else {
+                    outlineMesh.visible = false;
+                    player.mining.progress = 0;
+                    document.getElementById('mining-bar-container').style.display = 'none';
+                }
+
+                // 2. Movimento (Física Corrigida)
+                // Atrito mais forte para parar rápido
+                player.velocity.x -= player.velocity.x * 15.0 * delta;
+                player.velocity.z -= player.velocity.z * 15.0 * delta;
+                player.velocity.y -= 25.0 * delta; // Gravidade
+
+                // Input Direction
+                const direction = new THREE.Vector3();
+                // Correção: W deve ser negativo no Z local para ir para frente
+                direction.z = Number(keys['KeyW'] || 0) - Number(keys['KeyS'] || 0); 
+                direction.x = Number(keys['KeyD'] || 0) - Number(keys['KeyA'] || 0); 
+                direction.normalize();
+
+                // Aplicar força
+                if (keys['KeyW'] || keys['KeyS']) player.velocity.z -= direction.z * 60.0 * delta;
+                if (keys['KeyA'] || keys['KeyD']) player.velocity.x -= direction.x * 60.0 * delta;
+
+                // Colisão e Movimento
+                // X Axis
+                const nextX = camera.position.x - player.velocity.x * delta; // Note o sinal
+                if(!checkCollision(nextX, camera.position.y, camera.position.z)) {
+                    camera.translateX(-player.velocity.x * delta);
+                } else {
+                    player.velocity.x = 0;
+                }
+
+                // Z Axis
+                const nextZ = camera.position.z - player.velocity.z * delta; // Note o sinal
+                if(!checkCollision(camera.position.x, camera.position.y, nextZ)) {
+                    camera.translateZ(-player.velocity.z * delta); // translateZ move localmente
+                } else {
+                    player.velocity.z = 0;
+                }
+
+                // Pulo
+                if (player.onGround && keys['Space']) {
+                    player.velocity.y = player.jumpForce;
+                    player.onGround = false;
+                }
+
+                // Y Axis
+                camera.position.y += player.velocity.y * delta;
+                
+                // Colisão com Chão
+                if (camera.position.y < -30) { camera.position.set(0, 30, 0); player.velocity.y = 0; }
+                
+                const feetY = Math.floor(camera.position.y - player.height);
+                // Checar bloco exatamente abaixo dos pés
+                if (voxels.has(`${Math.floor(camera.position.x)},${feetY},${Math.floor(camera.position.z)}`)) {
+                    camera.position.y = feetY + 1 + player.height;
+                    player.velocity.y = 0;
+                    player.onGround = true;
+                } else {
+                    player.onGround = false;
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function checkCollision(x, y, z) {
+            // Checa corpo (altura pés e cabeça)
+            const cx = Math.floor(x);
+            const cz = Math.floor(z);
+            const cyHead = Math.floor(y);
+            const cyFeet = Math.floor(y - 1);
+            return voxels.has(`${cx},${cyHead},${cz}`) || voxels.has(`${cx},${cyFeet},${cz}`);
+        }
+
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

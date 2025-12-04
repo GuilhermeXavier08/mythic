@@ -1,12 +1,12 @@
-// src/app/library/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import LibraryGameItem from '@/components/LibraryGameItem';
-import NonAdminGuard from '@/components/NonAdminGuard'; // 1. IMPORTE
+import NonAdminGuard from '@/components/NonAdminGuard';
 
 interface Game {
   id: string;
@@ -20,14 +20,12 @@ interface PurchaseWithGame {
   game: Game;
 }
 
-// 2. RENOMEIE O COMPONENTE
 function LibraryContent() {
   const [purchasedGames, setPurchasedGames] = useState<PurchaseWithGame[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { token } = useAuth(); 
 
-  // ... (o useEffect e a lógica de fetch são os MESMOS) ...
   useEffect(() => {
     if (!token) {
       setLoading(false);
@@ -37,7 +35,6 @@ function LibraryContent() {
 
     const fetchLibrary = async () => {
       setLoading(true);
-      setError(null);
       try {
         const response = await fetch('/api/library', {
           headers: { Authorization: `Bearer ${token}` },
@@ -55,33 +52,55 @@ function LibraryContent() {
     fetchLibrary();
   }, [token]);
 
-  if (loading) {
-    return <LoadingSpinner />;
-  }
+  if (loading) return <div className={styles.loadingContainer}><LoadingSpinner /></div>;
 
   return (
     <main className={styles.page}>
-      <h1 className={styles.title}>Minha Biblioteca</h1>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Minha Biblioteca</h1>
+        <p className={styles.subtitle}>{purchasedGames.length} jogos adquiridos</p>
+      </div>
       
-      {error && <p className={styles.error}>{error}</p>}
+      {error && <div className={styles.errorContainer}><p>{error}</p></div>}
 
       {!loading && !error && purchasedGames.length === 0 && (
-        <p className={styles.empty}>
-          Sua biblioteca está vazia. Jogos que você comprar na loja aparecerão aqui!
-        </p>
+        <div className={styles.emptyState}>
+          <p>Sua biblioteca está vazia.</p>
+          <Link href="/store" className={styles.browseButton}>
+            Explorar Loja
+          </Link>
+        </div>
       )}
 
-      <div className={styles.list}>
+      {/* GRID DE JOGOS DA BIBLIOTECA */}
+      <div className={styles.grid}>
         {purchasedGames.map((purchase) => (
-          <LibraryGameItem key={purchase.id} game={purchase.game} />
+          <Link 
+            key={purchase.id} 
+            href={`/game/${purchase.game.id}`} /* <--- Redireciona para Detalhes */
+            className={styles.cardWrapper}
+          >
+            {/* Imagem do Jogo */}
+            <Image 
+              src={purchase.game.imageUrl} 
+              alt={purchase.game.title}
+              fill
+              className={styles.cardImage}
+              sizes="(max-width: 768px) 50vw, 20vw"
+            />
+            
+            {/* Overlay com Título e Status */}
+            <div className={styles.cardOverlay}>
+              <span className={styles.cardTitle}>{purchase.game.title}</span>
+              <span className={styles.statusBadge}>Jogar</span>
+            </div>
+          </Link>
         ))}
       </div>
-
     </main>
   );
 }
 
-// 3. EXPORTE O COMPONENTE "EMBRULHADO"
 export default function LibraryPage() {
   return (
     <NonAdminGuard>

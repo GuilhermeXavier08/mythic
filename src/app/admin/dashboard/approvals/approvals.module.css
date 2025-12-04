@@ -1,0 +1,130 @@
+/* src/app/admin/dashboard/approvals/approvals.module.css */
+
+.emptyState {
+  padding: 3rem;
+  text-align: center;
+  color: #666;
+  background: #1a1a1a;
+  border-radius: 8px;
+  border: 1px dashed #333;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.card {
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow 0.2s;
+}
+
+.card:hover {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  border-color: #444;
+}
+
+.imageWrapper {
+  width: 100%;
+  height: 180px;
+  background: #000;
+  border-bottom: 1px solid #333;
+}
+
+.img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content {
+  padding: 1.2rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.content h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 0.2rem;
+}
+
+.dev {
+  font-size: 0.85rem;
+  color: #7000ff;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+  display: block;
+}
+
+.desc {
+  font-size: 0.9rem;
+  color: #aaa;
+  line-height: 1.5;
+  margin-bottom: 1.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Limita a 3 linhas */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.meta {
+  margin-top: auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #2a2a2a;
+}
+
+.meta strong {
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.link {
+  color: #ccc;
+  font-size: 0.9rem;
+  text-decoration: underline;
+}
+.link:hover { color: #fff; }
+
+.actions {
+  display: flex;
+  padding: 1rem;
+  gap: 1rem;
+  background: #151515;
+}
+
+.btnApprove, .btnReject {
+  flex: 1;
+  padding: 0.8rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: opacity 0.2s;
+}
+
+.btnApprove {
+  background-color: #22c55e;
+  color: #000;
+}
+
+.btnReject {
+  background-color: #ef4444;
+  color: #fff;
+}
+
+.btnApprove:hover, .btnReject:hover {
+  opacity: 0.9;
+}

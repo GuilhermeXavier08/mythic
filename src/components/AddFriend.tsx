@@ -3,8 +3,9 @@
 
 import { useState, FormEvent } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation'; // <-- Importe o router
 import styles from './AddFriend.module.css';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaUser } from 'react-icons/fa'; // <-- Importe FaUser
 
 interface SearchResult {
   id: string;
@@ -12,7 +13,7 @@ interface SearchResult {
   friendCode: number;
   isFriend: boolean;
   requestStatus: 'PENDING' | 'NONE';
-  avatarUrl?: string | null; // <-- MUDANÇA: Adicionado campo de avatar
+  avatarUrl?: string | null;
 }
 
 export default function AddFriend() {
@@ -20,6 +21,7 @@ export default function AddFriend() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [message, setMessage] = useState('');
   const { user, token } = useAuth();
+  const router = useRouter(); // <-- Inicialize o router
 
   const handleSearch = async (e: FormEvent) => {
     e.preventDefault();
@@ -40,7 +42,6 @@ export default function AddFriend() {
         throw new Error(errMsg);
       }
 
-      // Filtra o próprio usuário dos resultados
       const resultsArray = Array.isArray(data) ? (data as SearchResult[]) : [];
       const filteredResults = resultsArray.filter((u) => u.username !== user?.username);
 
@@ -75,7 +76,6 @@ export default function AddFriend() {
       }
 
       setMessage('Solicitação enviada com sucesso!');
-      // Atualiza os resultados para mostrar o novo status
       setResults(results.map(r =>
         r.id === friendId ? { ...r, requestStatus: 'PENDING' as const } : r
       ));
@@ -106,7 +106,6 @@ export default function AddFriend() {
       }
 
       setMessage(`${friendUsername} removido com sucesso.`);
-      // Atualiza os resultados para mostrar o novo status
       setResults(results.map(r =>
         r.id === friendId ? { ...r, isFriend: false, requestStatus: 'NONE' as const } : r
       ));
@@ -114,6 +113,11 @@ export default function AddFriend() {
       const message = error instanceof Error ? error.message : String(error);
       setMessage(message);
     }
+  };
+
+  // Função para ir ao perfil
+  const goToProfile = (username: string) => {
+    router.push(`/profile/${username}`);
   };
 
   return (
@@ -136,7 +140,6 @@ export default function AddFriend() {
         {results.map((u) => (
           <div key={u.id} className={styles.resultItem}>
 
-            {/* // <-- MUDANÇA: Lógica do Avatar adicionada */}
             <div className={styles.resultAvatarWrapper}>
               {u.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -149,14 +152,35 @@ export default function AddFriend() {
                 <FaUserCircle size={40} className={styles.resultIcon} />
               )}
             </div>
-            {/* // <-- FIM DA MUDANÇA */}
 
             <div className={styles.resultInfo}>
               <span className={styles.resultUsername}>{u.username}</span>
               <span className={styles.resultFriendCode}>ID: {u.friendCode}</span>
             </div>
 
-            {/* Lógica condicional do botão */}
+            {/* --- BOTÃO DE PERFIL --- */}
+            <button 
+                className={styles.profileButton} // Você precisará adicionar estilo para isso (redondo)
+                onClick={() => goToProfile(u.username)}
+                title="Ver Perfil"
+                style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '50%',
+                    border: 'none',
+                    backgroundColor: '#444', // Cor de fundo do botão
+                    color: 'white',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                    marginRight: '10px'
+                }}
+            >
+                <FaUser size={18} />
+            </button>
+            {/* ----------------------- */}
+
             {u.isFriend ? (
               <button
                 className={styles.removeButton}

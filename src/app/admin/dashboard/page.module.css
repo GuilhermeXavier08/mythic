@@ -1,123 +1,58 @@
-/* src/app/admin/dashboard/page.module.css */
-.page {
-  width: 100%;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
+/* src/app/admin/dashboard/overview.module.css */
+
+.header {
+  margin-bottom: 2rem;
 }
 
 .title {
-  font-size: 2.5rem;
-  font-weight: 700;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
   margin-bottom: 0.5rem;
 }
 
 .subtitle {
-  font-size: 1.5rem;
-  font-weight: 500;
-  color: #a7a7a7;
-  margin-bottom: 2rem;
-  border-bottom: 1px solid #555555;
-  padding-bottom: 1rem;
+  color: #777;
+  font-size: 1rem;
 }
 
-.error {
-  color: #fca5a5;
-}
-
-.gameList {
-  display: flex;
-  flex-direction: column;
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
 }
 
-.gameCard {
-  display: flex;
-  gap: 1.5rem;
-  background-color: #353535;
-  border: 1px solid #555555;
-  border-radius: 8px;
+.kpiCard {
+  background: #1a1a1a;
   padding: 1.5rem;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
-
-.gameImage {
-  width: 150px;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 4px;
-  background-color: #555555;
-}
-
-.gameInfo {
-  flex: 1;
+  border-radius: 12px;
+  border: 1px solid #333;
   display: flex;
   flex-direction: column;
+  transition: transform 0.2s, border-color 0.2s;
 }
 
-.gameTitle {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: var(--secondary-color);
-  margin-bottom: 0.25rem;
+.kpiCard:hover {
+  transform: translateY(-2px);
+  border-color: #555;
 }
 
-.gameDev {
+.kpiLabel {
+  color: #888;
   font-size: 0.9rem;
-  color: #a7a7a7;
-  margin-bottom: 1rem;
-}
-
-.gameDesc {
-  font-size: 1rem;
-  color: #e0e0e0;
   margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
 }
 
-.gamePrice {
-  font-size: 1.1rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
+.kpiValue {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #fff;
 }
 
-.gameLinks a {
-  color: #a7a7a7;
-  text-decoration: underline;
-  margin-right: 1rem;
-}
-.gameLinks a:hover {
-  color: #FFFFFF;
-}
-
-.actions {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 1rem;
-}
-
-.button {
-  padding: 0.75rem 1.5rem;
-  border: none;
-  border-radius: 6px;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.approve {
-  background-color: #22c55e; /* Verde */
-  color: #1f2937;
-}
-.approve:hover {
-  background-color: #86efac;
-}
-
-.reject {
-  background-color: #ef4444; /* Vermelho */
-  color: #FFFFFF;
-}
-.reject:hover {
-  background-color: #fca5a5;
-}
+/* Cores específicas para os números */
+.green { color: #22c55e; }
+.purple { color: #7000ff; }
+.white { color: #fff; }

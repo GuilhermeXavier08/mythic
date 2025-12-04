@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sobrevivente das Sombras</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Press Start 2P', cursive;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        /* UI Overlays */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            z-index: 10;
+            pointer-events: auto;
+        }
+
+        .hidden {
+            display: none !important;
+            pointer-events: none;
+        }
+
+        /* HUD */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 10px;
+            pointer-events: none;
+            z-index: 5;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        #xpBarContainer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 20px;
+            background: #333;
+        }
+
+        #xpBar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #00b09b, #96c93d);
+            transition: width 0.2s;
+        }
+
+        /* Cards */
+        .card-container {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+        }
+
+        .card {
+            background: #2a2a2a;
+            border: 4px solid #555;
+            border-radius: 8px;
+            padding: 15px;
+            width: 200px;
+            cursor: pointer;
+            transition: transform 0.1s, border-color 0.1s;
+            text-align: center;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+            border-color: #ffd700;
+        }
+
+        .card h3 {
+            color: #ffd700;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .card p {
+            font-size: 10px;
+            color: #ddd;
+            line-height: 1.5;
+        }
+
+        .btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-family: inherit;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            border-radius: 4px;
+            box-shadow: 0 4px #c0392b;
+        }
+
+        .btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 0 #c0392b;
+        }
+
+        /* Joystick for Mobile */
+        #joystick-zone {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 150px;
+            height: 150px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            display: none; /* Shown via JS on touch devices */
+            z-index: 4;
+        }
+
+        #joystick-knob {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div id="xpBarContainer"><div id="xpBar"></div></div>
+        <div style="margin-top: 25px; color: white; text-shadow: 2px 2px 0 #000;">
+            LVL <span id="lvlDisplay">1</span> | 
+            Tempo: <span id="timeDisplay">00:00</span> |
+            Abates: <span id="killDisplay">0</span>
+        </div>
+        <div style="margin-top: 25px; color: #ff5555; text-shadow: 2px 2px 0 #000;">
+            HP: <span id="hpDisplay">100</span>/<span id="maxHpDisplay">100</span>
+        </div>
+    </div>
+
+    <!-- Start Screen -->
+    <div id="startScreen" class="overlay">
+        <h1 class="text-4xl text-yellow-400 mb-4 text-center">SOBREVIVENTE<br>DAS SOMBRAS</h1>
+        <p class="text-xs mb-8 text-gray-400">WASD/Setas para mover ou Joystick na tela</p>
+        <button class="btn" onclick="startGame()">INICIAR CAÇADA</button>
+    </div>
+
+    <!-- Level Up Screen -->
+    <div id="levelUpScreen" class="overlay hidden">
+        <h2 class="text-2xl text-yellow-400 mb-2">SUBIU DE NÍVEL!</h2>
+        <p class="text-xs mb-6 text-gray-300">Escolha uma recompensa</p>
+        <div id="cardContainer" class="card-container">
+            <!-- Cards generated by JS -->
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="gameOverScreen" class="overlay hidden">
+        <h2 class="text-3xl text-red-500 mb-4">VOCÊ MORREU</h2>
+        <p class="mb-2">Nível Alcançado: <span id="endLvl"></span></p>
+        <p class="mb-8">Tempo Sobrevivido: <span id="endTime"></span></p>
+        <button class="btn" onclick="location.reload()">TENTAR NOVAMENTE</button>
+    </div>
+
+    <!-- Joystick -->
+    <div id="joystick-zone">
+        <div id="joystick-knob"></div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+/**
+ * CONSTANTES E CONFIGURAÇÕES
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+// Game State
+let gameState = 'START'; // START, PLAYING, LEVELUP, GAMEOVER
+let frames = 0;
+let time = 0; // seconds
+let score = 0;
+let killCount = 0;
+let isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+if(isMobile) document.getElementById('joystick-zone').style.display = 'block';
+
+// Inputs
+const keys = { w: false, a: false, s: false, d: false, ArrowUp: false, ArrowLeft: false, ArrowDown: false, ArrowRight: false };
+const joystick = { active: false, x: 0, y: 0, originX: 0, originY: 0, dx: 0, dy: 0 };
+
+/**
+ * SISTEMA DE AUDIO (Simples)
+ */
+const AudioSys = {
+    ctx: new (window.AudioContext || window.webkitAudioContext)(),
+    playTone: function(freq, type, duration) {
+        if(this.ctx.state === 'suspended') this.ctx.resume();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + duration);
+    },
+    shoot: () => AudioSys.playTone(400, 'square', 0.1),
+    hit: () => AudioSys.playTone(100, 'sawtooth', 0.1),
+    gem: () => AudioSys.playTone(800, 'sine', 0.1),
+    levelup: () => {
+        AudioSys.playTone(600, 'sine', 0.2);
+        setTimeout(() => AudioSys.playTone(900, 'square', 0.4), 200);
+    }
+};
+
+/**
+ * CLASSES DO JOGO
+ */
+
+class Entity {
+    constructor(x, y, radius, color) {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color;
+        this.markedForDeletion = false;
+    }
+    
+    draw(ctx, viewport) {
+        ctx.beginPath();
+        ctx.arc(this.x - viewport.x, this.y - viewport.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+    }
+}
+
+class Player extends Entity {
+    constructor() {
+        super(0, 0, 12, '#3498db');
+        this.speed = 3; // REVERTIDO para 3 (Original)
+        this.maxHp = 100;
+        this.hp = 100;
+        this.level = 1;
+        this.xp = 0;
+        // Progressão acelerada: 25 (menos que 50 original, mais que 10 do modo fácil)
+        this.xpToNextLevel = 25; 
+        this.pickupRange = 60; // REVERTIDO para 60
+        this.weapons = [];
+        this.passives = {}; 
+        
+        // Initial Weapon
+        this.addWeapon('wand');
+        
+        // Visual
+        this.facingRight = true;
+        this.frameTimer = 0;
+    }
+
+    update() {
+        // Movement
+        let dx = 0;
+        let dy = 0;
+
+        // Keyboard
+        if (keys.w || keys.ArrowUp) dy = -1;
+        if (keys.s || keys.ArrowDown) dy = 1;
+        if (keys.a || keys.ArrowLeft) dx = -1;
+        if (keys.d || keys.ArrowRight) dx = 1;
+
+        // Joystick
+        if (joystick.active) {
+            dx = joystick.dx;
+            dy = joystick.dy;
+        }
+
+        // Normalize vector
+        if (dx !== 0 || dy !== 0) {
+            const length = Math.sqrt(dx*dx + dy*dy);
+            dx /= length;
+            dy /= length;
+            
+            this.x += dx * this.speed;
+            this.y += dy * this.speed;
+            
+            if (dx > 0) this.facingRight = true;
+            if (dx < 0) this.facingRight = false;
+        }
+
+        // Weapons Update
+        this.weapons.forEach(w => w.update(this));
+    }
+
+    draw(ctx, viewport) {
+        // Simple Sprite (Wizard)
+        const screenX = this.x - viewport.x;
+        const screenY = this.y - viewport.y;
+
+        ctx.font = '24px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        // Flip based on direction
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        if (!this.facingRight) ctx.scale(-1, 1);
+        ctx.fillText('🧙‍♂️', 0, 0);
+        ctx.restore();
+    }
+
+    gainXp(amount) {
+        this.xp += amount;
+        AudioSys.gem();
+        if (this.xp >= this.xpToNextLevel) {
+            this.levelUp();
+        }
+        updateHUD();
+    }
+
+    levelUp() {
+        this.level++;
+        this.xp -= this.xpToNextLevel;
+        this.xpToNextLevel = Math.floor(this.xpToNextLevel * 1.2);
+        AudioSys.levelup();
+        showLevelUpScreen();
+    }
+
+    takeDamage(amount) {
+        this.hp -= amount;
+        floatingTexts.push(new FloatingText(this.x, this.y - 20, `-${amount}`, '#ff0000'));
+        updateHUD();
+        if (this.hp <= 0) gameOver();
+    }
+
+    heal(amount) {
+        this.hp = Math.min(this.hp + amount, this.maxHp);
+        floatingTexts.push(new FloatingText(this.x, this.y - 20, `+${amount}`, '#00ff00'));
+        updateHUD();
+    }
+
+    addWeapon(type) {
+        // If has weapon, upgrade it
+        const existing = this.weapons.find(w => w.type === type);
+        if (existing) {
+            existing.upgrade();
+        } else {
+            const def = WEAPON_DEFS[type];
+            this.weapons.push(new Weapon(type, def));
+        }
+    }
+}
+
+class Enemy extends Entity {
+    constructor(typeConfig, x, y) {
+        super(x, y, typeConfig.radius, typeConfig.color);
+        // REVERTIDO: Escalonamento de HP para 0.5 (Original)
+        this.hp = typeConfig.hp * (1 + (time/60) * 0.5); 
+        this.speed = typeConfig.speed;
+        this.damage = typeConfig.damage;
+        this.xpValue = typeConfig.xp;
+        this.sprite = typeConfig.sprite;
+        this.pushback = 0;
+        this.pushbackDir = {x:0, y:0};
+    }
+
+    update(player) {
+        // Movement Logic
+        let dx = player.x - this.x;
+        let dy = player.y - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+        
+        dx /= dist;
+        dy /= dist;
+
+        if (this.pushback > 0) {
+            this.x -= this.pushbackDir.x * this.pushback;
+            this.y -= this.pushbackDir.y * this.pushback;
+            this.pushback *= 0.8;
+            if(this.pushback < 0.5) this.pushback = 0;
+        } else {
+            this.x += dx * this.speed;
+            this.y += dy * this.speed;
+        }
+
+        // Collision with player
+        if (dist < this.radius + player.radius) {
+            // Simple cooldown on player damage could be added here
+            if (frames % 30 === 0) player.takeDamage(this.damage);
+        }
+    }
+
+    takeDamage(amount, knockbackSource) {
+        this.hp -= amount;
+        floatingTexts.push(new FloatingText(this.x, this.y - 10, Math.floor(amount), '#ffffff'));
+        AudioSys.hit();
+        
+        // Knockback
+        if (knockbackSource) {
+            let kdx = this.x - knockbackSource.x;
+            let kdy = this.y - knockbackSource.y;
+            const kdist = Math.sqrt(kdx*kdx + kdy*kdy);
+            this.pushbackDir = { x: kdx/kdist, y: kdy/kdist };
+            this.pushback = 5;
+        }
+
+        if (this.hp <= 0) {
+            this.markedForDeletion = true;
+            gems.push(new Gem(this.x, this.y, this.xpValue));
+            killCount++;
+        }
+    }
+
+    draw(ctx, viewport) {
+        const screenX = this.x - viewport.x;
+        const screenY = this.y - viewport.y;
+        
+        // Render sprite
+        ctx.font = `${this.radius * 2}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Flash white on hit (using pushback as proxy for hit state)
+        if (this.pushback > 1) {
+            ctx.filter = 'brightness(200%)';
+        }
+
+        // Flip based on player pos
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        if (player.x < this.x) ctx.scale(-1, 1);
+        ctx.fillText(this.sprite, 0, 0);
+        ctx.restore();
+        ctx.filter = 'none';
+    }
+}
+
+class Gem extends Entity {
+    constructor(x, y, value) {
+        super(x, y, 4, '#00b09b');
+        this.value = value;
+        this.magnetized = false;
+        
+        // Gem colors based on value
+        if (value > 10) this.color = '#e74c3c'; // Red (High)
+        else if (value > 5) this.color = '#3498db'; // Blue (Med)
+        else this.color = '#2ecc71'; // Green (Low)
+    }
+
+    update() {
+        const dx = player.x - this.x;
+        const dy = player.y - this.y;
+        const dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist < player.pickupRange) {
+            this.magnetized = true;
+        }
+
+        if (this.magnetized) {
+            this.x += (dx / dist) * 8; // Fast move to player
+            this.y += (dy / dist) * 8;
+            
+            if (dist < player.radius) {
+                player.gainXp(this.value);
+                this.markedForDeletion = true;
+            }
+        }
+    }
+    
+    draw(ctx, viewport) {
+        const screenX = this.x - viewport.x;
+        const screenY = this.y - viewport.y;
+        
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(screenX, screenY - 5);
+        ctx.lineTo(screenX + 3, screenY);
+        ctx.lineTo(screenX, screenY + 5);
+        ctx.lineTo(screenX - 3, screenY);
+        ctx.fill();
+    }
+}
+
+class Projectile extends Entity {
+    constructor(x, y, vx, vy, duration, damage, pierce, type) {
+        super(x, y, 5, 'yellow');
+        this.vx = vx;
+        this.vy = vy;
+        this.duration = duration;
+        this.damage = damage;
+        this.pierce = pierce; // How many enemies it can hit
+        this.hitList = []; // Enemies already hit
+        this.type = type; // 'wand', 'axe', 'knife'
+        this.rotation = 0;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.duration--;
+
+        if (this.type === 'axe') {
+            this.vy += 0.15; // Gravity
+            this.rotation += 0.2;
+        } else if (this.type === 'knife') {
+             this.rotation = Math.atan2(this.vy, this.vx);
+        }
+
+        if (this.duration <= 0) this.markedForDeletion = true;
+    }
+
+    draw(ctx, viewport) {
+        const screenX = this.x - viewport.x;
+        const screenY = this.y - viewport.y;
+
+        ctx.save();
+        ctx.translate(screenX, screenY);
+        ctx.rotate(this.rotation);
+
+        if (this.type === 'wand') {
+            ctx.fillStyle = '#8e44ad';
+            ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle = '#e056fd'; // Glow core
+            ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI*2); ctx.fill();
+        } else if (this.type === 'axe') {
+             ctx.font = '20px Arial';
+             ctx.textAlign = 'center'; ctx.textBaseline='middle';
+             ctx.fillText('🪓', 0, 0);
+        } else if (this.type === 'knife') {
+            ctx.fillStyle = '#bdc3c7';
+            ctx.fillRect(-8, -2, 16, 4);
+        }
+        
+        ctx.restore();
+    }
+}
+
+class FloatingText {
+    constructor(x, y, text, color) {
+        this.x = x;
+        this.y = y;
+        this.text = text;
+        this.color = color;
+        this.life = 60;
+        this.opacity = 1;
+    }
+    update() {
+        this.y -= 0.5;
+        this.life--;
+        this.opacity = this.life / 60;
+    }
+    draw(ctx, viewport) {
+        ctx.globalAlpha = this.opacity;
+        ctx.fillStyle = this.color;
+        ctx.font = 'bold 12px "Press Start 2P"';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 2;
+        ctx.strokeText(this.text, this.x - viewport.x, this.y - viewport.y);
+        ctx.fillText(this.text, this.x - viewport.x, this.y - viewport.y);
+        ctx.globalAlpha = 1;
+    }
+}
+
+/**
+ * SISTEMA DE ARMAS - REVERTIDO PARA ORIGINAL
+ */
+
+const WEAPON_DEFS = {
+    wand: {
+        name: "Varinha Mágica",
+        desc: "Dispara projéteis no inimigo mais próximo.",
+        cooldown: 60, // Original
+        damage: 10,   // Original
+        speed: 7,
+        duration: 80,
+        pierce: 1,
+        count: 1
+    },
+    axe: {
+        name: "Machado",
+        desc: "Arremessa um machado em arco.",
+        cooldown: 90, // Original
+        damage: 25,   // Original
+        speed: 5, 
+        duration: 120,
+        pierce: 999,
+        count: 1
+    },
+    knife: {
+        name: "Adaga",
+        desc: "Atira rapidamente na direção que você olha.",
+        cooldown: 40, // Original
+        damage: 8,    // Original
+        speed: 10,
+        duration: 60,
+        pierce: 2,
+        count: 1
+    },
+    garlic: {
+        name: "Alho",
+        desc: "Cria uma aura que danifica inimigos próximos.",
+        cooldown: 30, // Original
+        damage: 3,    // Original
+        area: 40,     // Original
+        knockback: 2,
+        count: 1,
+        isAura: true
+    }
+};
+
+class Weapon {
+    constructor(type, def) {
+        this.type = type;
+        this.level = 1;
+        this.stats = { ...def };
+        this.timer = 0;
+    }
+
+    upgrade() {
+        this.level++;
+        // Upgrade Original (+20%)
+        this.stats.damage = Math.floor(this.stats.damage * 1.2); 
+        if (this.level % 2 === 0) this.stats.count++;
+        // Cooldown Original (-5)
+        this.stats.cooldown = Math.max(10, this.stats.cooldown - 5); 
+        if (this.type === 'garlic') this.stats.area += 10;
+    }
+
+    update(player) {
+        this.timer--;
+        if (this.timer <= 0) {
+            this.fire(player);
+            this.timer = this.stats.cooldown; 
+        }
+    }
+
+    fire(player) {
+        if (this.type === 'wand') {
+            // Find closest
+            let closest = null;
+            let minDist = Infinity;
+            
+            enemies.forEach(e => {
+                const dist = Math.hypot(e.x - player.x, e.y - player.y);
+                if (dist < minDist) {
+                    minDist = dist;
+                    closest = e;
+                }
+            });
+
+            if (closest && minDist < 400) { // Range Original
+                for (let i = 0; i < this.stats.count; i++) {
+                    setTimeout(() => {
+                        // Recalculate direction for each shot for better feel
+                        if(closest.markedForDeletion) return;
+                        const dx = closest.x - player.x;
+                        const dy = closest.y - player.y;
+                        const mag = Math.sqrt(dx*dx + dy*dy);
+                        
+                        projectiles.push(new Projectile(
+                            player.x, player.y, 
+                            (dx/mag)*this.stats.speed, (dy/mag)*this.stats.speed, 
+                            this.stats.duration, this.stats.damage, this.stats.pierce, 'wand'
+                        ));
+                        AudioSys.shoot();
+                    }, i * 100);
+                }
+            }
+        } 
+        else if (this.type === 'axe') {
+            for(let i=0; i<this.stats.count; i++) {
+                // Spread axes slightly
+                const vx = (player.facingRight ? 3 : -3) + (i * 0.5);
+                const vy = -this.stats.speed - (Math.random() * 2);
+                projectiles.push(new Projectile(
+                    player.x, player.y, vx, vy,
+                    this.stats.duration, this.stats.damage, this.stats.pierce, 'axe'
+                ));
+            }
+        }
+        else if (this.type === 'knife') {
+            for(let i=0; i<this.stats.count; i++) {
+                setTimeout(() => {
+                    const vx = player.facingRight ? this.stats.speed : -this.stats.speed;
+                    // slight spray
+                    const vy = (Math.random() - 0.5) * 1; 
+                    projectiles.push(new Projectile(
+                        player.x, player.y, vx, vy,
+                        this.stats.duration, this.stats.damage, this.stats.pierce, 'knife'
+                    ));
+                    AudioSys.shoot();
+                }, i * 50);
+            }
+        }
+        else if (this.type === 'garlic') {
+            enemies.forEach(e => {
+                const dist = Math.hypot(e.x - player.x, e.y - player.y);
+                if (dist < this.stats.area + e.radius) {
+                    e.takeDamage(this.stats.damage, player);
+                }
+            });
+        }
+    }
+}
+
+/**
+ * GESTÃO GLOBAL DO JOGO
+ */
+
+let player;
+let enemies = [];
+let gems = [];
+let projectiles = [];
+let floatingTexts = [];
+let spawnTimer = 0;
+
+// Configurações de Inimigos - REVERTIDAS PARA ORIGINAL (Difícil)
+const ENEMY_TYPES = [
+    { name: 'Bat', hp: 10, speed: 2, damage: 5, xp: 2, radius: 10, color: 'gray', sprite: '🦇' }, // 0
+    { name: 'Skeleton', hp: 25, speed: 1.2, damage: 10, xp: 5, radius: 14, color: 'white', sprite: '💀' }, // 1
+    { name: 'Ghost', hp: 60, speed: 0.8, damage: 15, xp: 12, radius: 16, color: 'cyan', sprite: '👻' }, // 2
+    { name: 'Boss', hp: 500, speed: 1.5, damage: 30, xp: 100, radius: 30, color: 'red', sprite: '👹' } // 3
+];
+
+function startGame() {
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('gameOverScreen').classList.add('hidden');
+    
+    player = new Player();
+    enemies = [];
+    gems = [];
+    projectiles = [];
+    floatingTexts = [];
+    score = 0;
+    time = 0;
+    frames = 0;
+    killCount = 0;
+    
+    gameState = 'PLAYING';
+    updateHUD();
+    gameLoop();
+    
+    // Timer Loop
+    setInterval(() => {
+        if(gameState === 'PLAYING') {
+            time++;
+            document.getElementById('timeDisplay').innerText = formatTime(time);
+        }
+    }, 1000);
+}
+
+function spawnEnemies() {
+    spawnTimer--;
+    if (spawnTimer <= 0) {
+        // Spawn acelerado: Math.floor(time / 2) em vez de time / 5 para aumentar densidade rápido
+        let rate = Math.max(10, 60 - Math.floor(time / 2)); 
+        spawnTimer = rate;
+
+        // Determine enemy type based on time
+        let typeIndex = 0;
+        if (time > 30) typeIndex = Math.random() < 0.3 ? 1 : 0;
+        if (time > 90) typeIndex = Math.random() < 0.4 ? 2 : (Math.random() < 0.5 ? 1 : 0);
+        if (time > 0 && time % 60 === 0 && Math.random() < 0.5) { 
+            // Horde logic could go here
+        }
+        
+        // Spawn slightly outside view
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 500; // Assuming screen isn't larger than this usually on logic scale
+        const ex = player.x + Math.cos(angle) * dist;
+        const ey = player.y + Math.sin(angle) * dist;
+        
+        enemies.push(new Enemy(ENEMY_TYPES[typeIndex], ex, ey));
+    }
+
+    // Boss Spawn
+    if (time > 0 && time % 120 === 0 && frames % 60 === 0) {
+        const angle = Math.random() * Math.PI * 2;
+        enemies.push(new Enemy(ENEMY_TYPES[3], player.x + Math.cos(angle)*400, player.y + Math.sin(angle)*400));
+    }
+}
+
+function update() {
+    player.update();
+    
+    // Camera Viewport
+    const viewport = {
+        x: player.x - canvas.width / 2,
+        y: player.y - canvas.height / 2
+    };
+
+    spawnEnemies();
+
+    // Update Entities
+    enemies.forEach(e => e.update(player));
+    projectiles.forEach(p => p.update());
+    gems.forEach(g => g.update());
+    floatingTexts.forEach(t => t.update());
+
+    // Collisions: Projectile vs Enemy
+    projectiles.forEach(p => {
+        enemies.forEach(e => {
+            if (p.markedForDeletion || e.markedForDeletion) return;
+            
+            // Check if already hit this enemy
+            if (p.hitList.includes(e)) return;
+
+            const dist = Math.hypot(p.x - e.x, p.y - e.y);
+            if (dist < p.radius + e.radius) {
+                e.takeDamage(p.damage, p); // Pass projectile as knockback source
+                p.pierce--;
+                p.hitList.push(e);
+                if (p.pierce <= 0) p.markedForDeletion = true;
+            }
+        });
+    });
+
+    // Clean up
+    enemies = enemies.filter(e => !e.markedForDeletion);
+    gems = gems.filter(g => !g.markedForDeletion);
+    projectiles = projectiles.filter(p => !p.markedForDeletion);
+    floatingTexts = floatingTexts.filter(t => t.life > 0);
+}
+
+function draw() {
+    // Clear background
+    ctx.fillStyle = '#111';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Grid (optional for movement feel)
+    const viewport = {
+        x: player.x - canvas.width / 2,
+        y: player.y - canvas.height / 2
+    };
+
+    drawGrid(viewport);
+
+    // Draw Order: Gems -> Player -> Enemies -> Projectiles -> UI
+    gems.forEach(g => g.draw(ctx, viewport));
+    
+    // Draw Garlic Aura specifically if exists
+    const garlic = player.weapons.find(w => w.type === 'garlic');
+    if (garlic) {
+        ctx.save();
+        ctx.translate(player.x - viewport.x, player.y - viewport.y);
+        ctx.beginPath();
+        ctx.arc(0, 0, garlic.stats.area, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255, 255, 200, ${0.1 + Math.sin(frames*0.1)*0.05})`;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,200,0.3)';
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    player.draw(ctx, viewport);
+    enemies.forEach(e => e.draw(ctx, viewport));
+    projectiles.forEach(p => p.draw(ctx, viewport));
+    floatingTexts.forEach(t => t.draw(ctx, viewport));
+}
+
+function drawGrid(viewport) {
+    ctx.strokeStyle = '#222';
+    ctx.lineWidth = 1;
+    const gridSize = 50;
+    const offsetX = -viewport.x % gridSize;
+    const offsetY = -viewport.y % gridSize;
+
+    ctx.beginPath();
+    for (let x = offsetX; x < canvas.width; x += gridSize) {
+        ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
+    }
+    for (let y = offsetY; y < canvas.height; y += gridSize) {
+        ctx.moveTo(0, y); ctx.lineTo(canvas.width, y);
+    }
+    ctx.stroke();
+}
+
+function gameLoop() {
+    if (gameState === 'PLAYING') {
+        update();
+        draw();
+        frames++;
+        requestAnimationFrame(gameLoop);
+    }
+}
+
+/**
+ * SISTEMA DE UI E UPGRADES
+ */
+
+const UPGRADE_POOL = [
+    { id: 'wand', type: 'weapon', name: 'Varinha Mágica', desc: 'Atira no inimigo mais próximo.', icon: '🪄' },
+    { id: 'axe', type: 'weapon', name: 'Machado', desc: 'Dano em área alto em arco.', icon: '🪓' },
+    { id: 'knife', type: 'weapon', name: 'Adaga', desc: 'Projétil rápido frontal.', icon: '🔪' },
+    { id: 'garlic', type: 'weapon', name: 'Alho', desc: 'Aura defensiva.', icon: '🧄' },
+    { id: 'spinach', type: 'passive', name: 'Espinafre', desc: 'Aumenta dano em 10%.', icon: '🍃' },
+    { id: 'heart', type: 'passive', name: 'Coração', desc: 'Cura 30 HP.', icon: '❤️' }
+];
+
+function showLevelUpScreen() {
+    gameState = 'LEVELUP';
+    document.getElementById('levelUpScreen').classList.remove('hidden');
+    
+    // Pick 3 random
+    const options = [];
+    for(let i=0; i<3; i++) {
+        const item = UPGRADE_POOL[Math.floor(Math.random() * UPGRADE_POOL.length)];
+        options.push(item);
+    }
+
+    const container = document.getElementById('cardContainer');
+    container.innerHTML = '';
+
+    options.forEach(opt => {
+        const div = document.createElement('div');
+        div.className = 'card';
+        
+        // Check current level of this item for player
+        let levelText = "Novo!";
+        const existingWep = player.weapons.find(w => w.type === opt.id);
+        if (existingWep) levelText = `Nível ${existingWep.level + 1}`;
+        if (opt.type === 'passive') levelText = "Passivo";
+
+        div.innerHTML = `
+            <div style="font-size:30px; margin-bottom:5px;">${opt.icon}</div>
+            <h3>${opt.name}</h3>
+            <p style="color:#aaa; margin-bottom:5px;">${levelText}</p>
+            <p>${opt.desc}</p>
+        `;
+        div.onclick = () => selectUpgrade(opt);
+        container.appendChild(div);
+    });
+}
+
+function selectUpgrade(opt) {
+    if (opt.type === 'weapon') {
+        player.addWeapon(opt.id);
+    } else {
+        // Passives
+        if (opt.id === 'heart') player.heal(30);
+        if (opt.id === 'spinach') {
+            // Apply global damage buff (simplified impl)
+            player.weapons.forEach(w => w.stats.damage = Math.floor(w.stats.damage * 1.1));
+        }
+    }
+    
+    document.getElementById('levelUpScreen').classList.add('hidden');
+    gameState = 'PLAYING';
+    gameLoop();
+}
+
+function updateHUD() {
+    // XP Bar
+    const pct = (player.xp / player.xpToNextLevel) * 100;
+    document.getElementById('xpBar').style.width = `${pct}%`;
+    document.getElementById('lvlDisplay').innerText = player.level;
+    document.getElementById('killDisplay').innerText = killCount;
+    document.getElementById('hpDisplay').innerText = Math.floor(player.hp);
+    document.getElementById('maxHpDisplay').innerText = player.maxHp;
+}
+
+function gameOver() {
+    gameState = 'GAMEOVER';
+    document.getElementById('endLvl').innerText = player.level;
+    document.getElementById('endTime').innerText = formatTime(time);
+    document.getElementById('gameOverScreen').classList.remove('hidden');
+}
+
+function formatTime(s) {
+    const min = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${min < 10 ? '0'+min : min}:${sec < 10 ? '0'+sec : sec}`;
+}
+
+/**
+ * INPUT HANDLERS
+ */
+
+window.addEventListener('keydown', e => {
+    if (keys.hasOwnProperty(e.key)) keys[e.key] = true;
+});
+
+window.addEventListener('keyup', e => {
+    if (keys.hasOwnProperty(e.key)) keys[e.key] = false;
+});
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+// Initial resize
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+// TOUCH CONTROLS (Virtual Joystick)
+const joyZone = document.getElementById('joystick-zone');
+const joyKnob = document.getElementById('joystick-knob');
+
+joyZone.addEventListener('touchstart', e => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
+    joystick.active = true;
+    joystick.originX = touch.clientX;
+    joystick.originY = touch.clientY;
+    
+    // Reposition joystick visual to where user touched? 
+    // Usually better to have fixed zone or floating. 
+    // Here we use fixed zone logic but relative tracking inside it.
+}, {passive: false});
+
+joyZone.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if (!joystick.active) return;
+    const touch = e.changedTouches[0];
+    
+    const maxDist = 40;
+    let dx = touch.clientX - joystick.originX;
+    let dy = touch.clientY - joystick.originY;
+    
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    
+    // Clamp visual
+    if (dist > maxDist) {
+        dx = (dx / dist) * maxDist;
+        dy = (dy / dist) * maxDist;
+    }
+    
+    joyKnob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    
+    // Set input values (-1 to 1)
+    joystick.dx = dx / maxDist;
+    joystick.dy = dy / maxDist;
+}, {passive: false});
+
+joyZone.addEventListener('touchend', e => {
+    e.preventDefault();
+    joystick.active = false;
+    joystick.dx = 0;
+    joystick.dy = 0;
+    joyKnob.style.transform = `translate(-50%, -50%)`;
+});
+
+</script>
+</body>
+</html>

@@ -1,9 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Import para navegação
 import { useAuth } from '@/context/AuthContext';
 import styles from './FriendsList.module.css';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaCommentDots } from 'react-icons/fa'; // Adicionado ícone de chat
 
 interface Friend {
   id: string;
@@ -14,11 +15,11 @@ interface Friend {
 
 export default function FriendsList() {
   const { token } = useAuth();
+  const router = useRouter(); // Hook de navegação
   const [friends, setFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Função para buscar amigos (refatorada para ser reutilizável)
   const fetchFriends = async () => {
     setLoading(true);
     try {
@@ -45,7 +46,6 @@ export default function FriendsList() {
     }
   }, [token]);
 
-  // Função para remover amigo
   const handleRemoveFriend = async (friendId: string, friendUsername: string) => {
     if (!window.confirm(`Tem certeza que deseja remover ${friendUsername} da sua lista de amigos?`)) {
       return;
@@ -64,7 +64,6 @@ export default function FriendsList() {
         throw new Error('Falha ao remover amigo.');
       }
 
-      // Atualiza a lista removendo o amigo ou refazendo a busca
       await fetchFriends();
       alert(`${friendUsername} foi removido com sucesso.`);
     } catch (error: unknown) {
@@ -72,6 +71,12 @@ export default function FriendsList() {
       setError(message);
       setLoading(false);
     }
+  };
+
+  // Função para ir ao chat
+  const handleOpenChat = (friendId: string) => {
+    // Redireciona para a rota de chat (ajuste a URL conforme sua estrutura)
+    router.push(`/chat/${friendId}`);
   };
 
   if (loading) {
@@ -107,13 +112,26 @@ export default function FriendsList() {
                 <span className={styles.friendCode}>ID: {friend.friendCode}</span>
               </div>
             </div>
-            <button
-              className={styles.removeButton}
-              onClick={() => handleRemoveFriend(friend.id, friend.username)}
-              disabled={loading}
-            >
-              Remover
-            </button>
+            
+            {/* Área de Ações */}
+            <div className={styles.actions}>
+              {/* Botão de Chat Circular */}
+              <button 
+                className={styles.chatButton}
+                onClick={() => handleOpenChat(friend.id)}
+                title="Abrir Chat"
+              >
+                <FaCommentDots size={20} />
+              </button>
+
+              <button
+                className={styles.removeButton}
+                onClick={() => handleRemoveFriend(friend.id, friend.username)}
+                disabled={loading}
+              >
+                Remover
+              </button>
+            </div>
           </div>
         ))
       )}

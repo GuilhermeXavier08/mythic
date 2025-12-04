@@ -52,6 +52,10 @@ model User {
   receivedRequests FriendshipRequest[] @relation("ReceivedRequests")
   friendships1     Friendship[]        @relation("User1Friendships")
   friendships2     Friendship[]        @relation("User2Friendships")
+
+  // --- ADICIONE ESTAS DUAS LINHAS AQUI EMBAIXO ---
+  sentMessages      Message[]           @relation("SentMessages")
+  receivedMessages  Message[]           @relation("ReceivedMessages")
 }
 
 model Game {
@@ -129,4 +133,20 @@ model Friendship {
   @@unique([userId1, userId2])
   @@index([userId1])
   @@index([userId2])
+}
+
+// --- CHAT: NOVO MODELO ---
+model Message {
+  id         String   @id @default(cuid())
+  content    String   @db.Text // @db.Text permite mensagens longas
+  senderId   String
+  receiverId String
+  createdAt  DateTime @default(now())
+
+  // Relações
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  // Índice para deixar a busca de conversas mais rápida
+  @@index([senderId, receiverId])
 }

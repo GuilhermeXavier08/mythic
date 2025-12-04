@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonic-Like Rogue Runner</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #222;
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            user-select: none;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            border: 4px solid #444;
+        }
+
+        canvas {
+            display: block;
+            background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .hud-top {
+            display: flex;
+            justify-content: space-between;
+            text-shadow: 2px 2px 0 #000;
+            font-size: 16px;
+        }
+
+        .hud-ring {
+            color: #FFD700;
+        }
+
+        .hud-score {
+            color: #FFF;
+        }
+
+        #menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            pointer-events: auto;
+            backdrop-filter: blur(2px);
+        }
+
+        h1 {
+            color: #3498db;
+            text-shadow: 4px 4px 0 #000;
+            font-size: 40px;
+            margin-bottom: 10px;
+            line-height: 1.2;
+        }
+
+        p {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #ddd;
+            max-width: 600px;
+        }
+
+        .btn {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 4px 4px 0 #922b21;
+            transition: transform 0.1s;
+        }
+
+        .btn:active {
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0 #922b21;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        #msg-level {
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 30px;
+            color: #fff;
+            text-shadow: 3px 3px 0 #000;
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <canvas id="gameCanvas" width="800" height="450"></canvas>
+    
+    <div id="ui-layer">
+        <div class="hud-top">
+            <div class="hud-score">SCORE: <span id="scoreVal">0</span></div>
+            <div style="color:white">NÍVEL: <span id="levelVal">1</span></div>
+            <div class="hud-ring">RINGS: <span id="ringsVal">0</span></div>
+        </div>
+        <div id="msg-level">NÍVEL 1</div>
+    </div>
+
+    <div id="menu-overlay">
+        <h1>SPEED ROGUE</h1>
+        <p>Use SETAS ou A/D para mover.<br>ESPAÇO ou SETA CIMA para pular.</p>
+        <p style="color: #FFD700; margin-top: 10px;">Colete Anéis para sobreviver.<br>Pule na cabeça dos inimigos!</p>
+        <button class="btn" onclick="startGame()">INICIAR RUN</button>
+    </div>
+</div>
+
+<script>
+/**
+ * LÓGICA DO JOGO
+ * Sonic-like physics + Geração Procedural
+ */
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const uiLevel = document.getElementById('levelVal');
+const uiScore = document.getElementById('scoreVal');
+const uiRings = document.getElementById('ringsVal');
+const menuOverlay = document.getElementById('menu-overlay');
+const msgLevel = document.getElementById('msg-level');
+
+// Configurações Globais
+const TILE_SIZE = 32;
+const GRAVITY = 0.6;
+const FRICTION = 0.96; // Inércia do chão
+const AIR_RESISTANCE = 0.99;
+const ACCEL = 0.5;
+const MAX_SPEED = 12;
+const JUMP_FORCE = 13;
+const BOUNCE_FORCE = 8; // Pulo ao matar inimigo
+
+// Estado do Jogo
+let gameState = 'MENU'; // MENU, PLAYING, GAMEOVER, TRANSITION
+let frameCount = 0;
+let score = 0;
+let level = 1;
+let cameraX = 0;
+
+// Inputs
+const keys = {
+    right: false,
+    left: false,
+    up: false,
+    down: false
+};
+
+// Entidades
+let player;
+let platforms = [];
+let enemies = [];
+let rings = [];
+let particles = [];
+let goal;
+
+class Player {
+    constructor() {
+        this.x = 100;
+        this.y = 100;
+        this.width = 24;
+        this.height = 24;
+        this.vx = 0;
+        this.vy = 0;
+        this.grounded = false;
+        this.rings = 0;
+        this.invulnerable = 0; // Frames de invencibilidade
+        this.dead = false;
+        this.facingRight = true;
+        this.angle = 0; // Para rotação visual
+    }
+
+    update() {
+        if (this.dead) return;
+
+        // Input Físico
+        if (keys.right) {
+            if (this.vx < MAX_SPEED) this.vx += ACCEL;
+            this.facingRight = true;
+        }
+        if (keys.left) {
+            if (this.vx > -MAX_SPEED) this.vx -= ACCEL;
+            this.facingRight = false;
+        }
+
+        // Pulo
+        if (keys.up && this.grounded) {
+            this.vy = -JUMP_FORCE;
+            this.grounded = false;
+            createDust(this.x + this.width/2, this.y + this.height);
+        }
+
+        // Física
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += GRAVITY;
+
+        // Atrito
+        if (this.grounded) {
+            this.vx *= FRICTION;
+        } else {
+            this.vx *= AIR_RESISTANCE;
+        }
+
+        // Colisão com o chão (Plataformas)
+        this.grounded = false;
+        
+        // Verifica colisão com plataformas
+        // Otimização simples: checar apenas plataformas próximas ou na tela seria ideal, 
+        // mas aqui vamos iterar todas (array não será gigante)
+        for (let p of platforms) {
+            if (this.x < p.x + p.width &&
+                this.x + this.width > p.x &&
+                this.y + this.height > p.y &&
+                this.y + this.height < p.y + p.height + 20 && // Tolerância para não "teleportar" de baixo
+                this.vy >= 0) { // Caindo
+                
+                this.y = p.y - this.height;
+                this.vy = 0;
+                this.grounded = true;
+            }
+        }
+
+        // Morte por queda
+        if (this.y > canvas.height + 200) {
+            die();
+        }
+
+        // Invencibilidade
+        if (this.invulnerable > 0) this.invulnerable--;
+
+        // Rotação visual baseada na velocidade (efeito de rolar)
+        if (!this.grounded || Math.abs(this.vx) > 1) {
+            this.angle += this.vx * 0.2;
+        } else {
+            // Arredonda ângulo quando parado
+            this.angle = Math.round(this.angle / (Math.PI*2)) * (Math.PI*2);
+        }
+    }
+
+    draw(ctx) {
+        if (this.dead) return;
+        
+        // Piscar se invulnerável
+        if (this.invulnerable > 0 && Math.floor(Date.now() / 50) % 2 === 0) return;
+
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        
+        // Se estiver pulando ou correndo rápido, desenha como bola (Spin Dash visual)
+        if (!this.grounded || Math.abs(this.vx) > 4) {
+            ctx.rotate(this.angle);
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Espinhos (triangulos) girando
+            ctx.fillStyle = '#2980b9';
+            for(let i=0; i<4; i++) {
+                ctx.rotate(Math.PI/2);
+                ctx.beginPath();
+                ctx.moveTo(0, -this.width/2);
+                ctx.lineTo(5, -this.width/2 - 8);
+                ctx.lineTo(-5, -this.width/2 - 8);
+                ctx.fill();
+            }
+        } else {
+            // Parado ou andando devagar
+            // Corpo
+            ctx.fillStyle = '#3498db';
+            ctx.beginPath();
+            ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Olho
+            ctx.fillStyle = 'white';
+            let eyeX = this.facingRight ? 4 : -4;
+            ctx.beginPath();
+            ctx.arc(eyeX, -4, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.arc(eyeX + (this.facingRight?2:-2), -4, 2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tênis Vermelhos
+            ctx.fillStyle = '#e74c3c';
+            ctx.fillRect(this.facingRight? -5 : -5, 8, 10, 5);
+        }
+
+        ctx.restore();
+    }
+}
+
+class Enemy {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.width = 30;
+        this.height = 30;
+        this.vx = type === 'flyer' ? 2 : 1.5;
+        this.type = type; // 'walker' or 'flyer'
+        this.originX = x;
+        this.patrolDist = 150;
+        this.active = true;
+    }
+
+    update() {
+        if (!this.active) return;
+        
+        this.x += this.vx;
+
+        // Patrulha simples
+        if (Math.abs(this.x - this.originX) > this.patrolDist) {
+            this.vx *= -1;
+        }
+
+        if (this.type === 'flyer') {
+            this.y = this.y + Math.sin(frameCount * 0.1) * 1;
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+        
+        // Verifica se está na tela antes de desenhar
+        if (this.x + this.width < cameraX || this.x > cameraX + canvas.width) return;
+
+        ctx.save();
+        ctx.translate(this.x + this.width/2, this.y + this.height/2);
+        
+        if (this.type === 'walker') {
+            // Inimigo terrestre (estilo Moto Bug)
+            ctx.fillStyle = '#e74c3c'; // Vermelho
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, Math.PI, 0); // Semicirculo
+            ctx.fill();
+            // Roda
+            ctx.fillStyle = '#555';
+            ctx.beginPath();
+            ctx.arc(0, 10, 8, 0, Math.PI*2);
+            ctx.fill();
+        } else {
+            // Voador (estilo Buzz Bomber)
+            ctx.fillStyle = '#f39c12'; // Laranja
+            ctx.fillRect(-15, -10, 30, 20);
+            // Asas
+            ctx.fillStyle = '#bdc3c7';
+            if (Math.floor(frameCount / 5) % 2 === 0) {
+                ctx.fillRect(-10, -20, 20, 10);
+            } else {
+                ctx.fillRect(-10, -15, 20, 5);
+            }
+        }
+        
+        ctx.restore();
+    }
+}
+
+class Ring {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.radius = 8;
+        this.active = true;
+        this.animOffset = Math.random() * 10;
+        // Para física de "bouncing" quando perde anéis
+        this.vx = 0;
+        this.vy = 0;
+        this.bouncing = false; 
+        this.lifeTime = 0;
+    }
+
+    update() {
+        if (!this.active) return;
+
+        if (this.bouncing) {
+            this.x += this.vx;
+            this.y += this.vy;
+            this.vy += GRAVITY;
+            this.lifeTime++;
+
+            // Colisão chão simples
+            for (let p of platforms) {
+                if (this.x > p.x && this.x < p.x + p.width &&
+                    this.y + this.radius > p.y && this.y - this.radius < p.y + p.height) {
+                    this.y = p.y - this.radius;
+                    this.vy *= -0.7; // Quica
+                }
+            }
+            // Desaparece após um tempo se for anel dropado
+            if (this.lifeTime > 300) this.active = false; // 5 segundos
+        }
+    }
+
+    draw(ctx) {
+        if (!this.active) return;
+        // Piscar se estiver quase sumindo
+        if (this.bouncing && this.lifeTime > 240 && frameCount % 4 === 0) return;
+        if (this.x + this.radius < cameraX || this.x - this.radius > cameraX + canvas.width) return;
+
+        ctx.fillStyle = '#FFD700';
+        ctx.strokeStyle = '#B8860B';
+        ctx.lineWidth = 2;
+        
+        let scale = 1;
+        if (!this.bouncing) {
+            // Efeito giratório simples (escala x)
+            scale = Math.abs(Math.sin((frameCount + this.animOffset) * 0.1));
+            scale = Math.max(0.2, scale);
+        }
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.scale(scale, 1);
+        ctx.beginPath();
+        ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        // Brilho interno
+        ctx.globalAlpha = 0.3;
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class Goal {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.width = 40;
+        this.height = 100;
+        this.passed = false;
+        this.rotation = 0;
+    }
+
+    update() {
+        if (this.passed) {
+            this.rotation += 0.2;
+        }
+    }
+
+    draw(ctx) {
+        if (this.x < cameraX - 100 || this.x > cameraX + canvas.width + 100) return;
+
+        // Poste
+        ctx.fillStyle = '#7f8c8d';
+        ctx.fillRect(this.x + 18, this.y, 4, this.height);
+
+        // Placa
+        ctx.save();
+        ctx.translate(this.x + 20, this.y + 30);
+        if (this.passed) {
+             ctx.rotate(this.rotation);
+        }
+        
+        // Frente da placa (Sonic) ou Trás (Eggman/Goal)
+        // Aqui faremos simples: Azul = OK, Vermelho = Bloqueado
+        ctx.fillStyle = this.passed ? '#3498db' : '#e74c3c';
+        ctx.fillRect(-20, -20, 40, 40);
+        
+        ctx.fillStyle = 'white';
+        ctx.font = '20px Arial';
+        ctx.fillText(this.passed ? '★' : '!', -5, 8);
+        
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = (Math.random() - 0.5) * 10;
+        this.life = 30;
+        this.color = color;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+    }
+    draw(ctx) {
+        ctx.globalAlpha = this.life / 30;
+        ctx.fillStyle = this.color;
+        ctx.fillRect(this.x, this.y, 4, 4);
+        ctx.globalAlpha = 1;
+    }
+}
+
+// === GERAÇÃO PROCEDURAL ===
+function generateLevel(lvlDiff) {
+    platforms = [];
+    enemies = [];
+    rings = [];
+    particles = [];
+    
+    // Configurações de dificuldade
+    let levelLength = 100 + (lvlDiff * 20); // Níveis ficam mais longos
+    let gapChance = Math.min(0.3, 0.1 + (lvlDiff * 0.02));
+    let enemyChance = Math.min(0.4, 0.1 + (lvlDiff * 0.03));
+    
+    let currentX = 0;
+    let currentY = 300; // Altura base
+    
+    // Plataforma inicial segura
+    platforms.push({x: -100, y: 300, width: 600, height: 600}); // Chãozão
+    currentX = 500;
+
+    for (let i = 0; i < levelLength; i++) {
+        // Decidir se é buraco ou plataforma
+        if (Math.random() < gapChance) {
+            // Buraco
+            let gapSize = 100 + Math.random() * (50 + lvlDiff * 10);
+            gapSize = Math.min(gapSize, 250); // Limite máximo pulável
+            currentX += gapSize;
+        } else {
+            // Plataforma
+            let platWidth = 200 + Math.random() * 400;
+            
+            // Variação de altura
+            let heightChange = (Math.random() - 0.5) * 200;
+            currentY += heightChange;
+            
+            // Clamp altura
+            if (currentY < 100) currentY = 100;
+            if (currentY > 400) currentY = 400;
+
+            platforms.push({
+                x: currentX, 
+                y: currentY, 
+                width: platWidth, 
+                height: 600 // Altura visual para baixo
+            });
+
+            // Adicionar Inimigos
+            if (Math.random() < enemyChance) {
+                let type = Math.random() > 0.5 ? 'walker' : 'flyer';
+                let ex = currentX + 50 + Math.random() * (platWidth - 100);
+                let ey = currentY - 40;
+                if (type === 'flyer') ey -= 60; // Voa mais alto
+                enemies.push(new Enemy(ex, ey, type));
+            }
+
+            // Adicionar Anéis (Padrões)
+            if (Math.random() < 0.6) {
+                let pattern = Math.floor(Math.random() * 3);
+                let rx = currentX + platWidth/2;
+                let ry = currentY - 40;
+                
+                if (pattern === 0) { // Linha reta
+                    for(let r=0; r<5; r++) rings.push(new Ring(rx + r*30, ry));
+                } else if (pattern === 1) { // Arco
+                    for(let r=0; r<5; r++) rings.push(new Ring(rx + r*30, ry - Math.sin(r)*40));
+                } else { // Solitário em cima
+                    rings.push(new Ring(rx, ry - 80));
+                }
+            }
+
+            currentX += platWidth;
+        }
+    }
+
+    // Goal
+    goal = new Goal(currentX + 100, currentY - 100);
+    // Plataforma final para o goal
+    platforms.push({x: currentX, y: currentY, width: 500, height: 600});
+}
+
+function createDust(x, y) {
+    for(let i=0; i<5; i++) {
+        particles.push(new Particle(x, y, '#fff'));
+    }
+}
+
+function createExplosion(x, y) {
+    for(let i=0; i<10; i++) {
+        particles.push(new Particle(x, y, '#e74c3c'));
+    }
+}
+
+function dropRings(amount, x, y) {
+    let toDrop = Math.min(amount, 20); // Limite para não travar
+    for(let i=0; i<toDrop; i++) {
+        let r = new Ring(x, y);
+        r.bouncing = true;
+        r.vx = (Math.random() - 0.5) * 15;
+        r.vy = -5 - Math.random() * 10;
+        rings.push(r);
+    }
+}
+
+function checkCollisions() {
+    // Player vs Inimigos
+    for (let e of enemies) {
+        if (!e.active) continue;
+
+        // AABB Simples
+        if (player.x < e.x + e.width &&
+            player.x + player.width > e.x &&
+            player.y < e.y + e.height &&
+            player.y + player.height > e.y) {
+            
+            // Spin Jump Check (atacando de cima)
+            let isJumpingOnTop = player.vy > 0 && player.y + player.height < e.y + e.height/2 + 10;
+            let isSpinningFast = Math.abs(player.vx) > 8 && player.grounded; // Rolling (opcional)
+
+            if (isJumpingOnTop || player.invulnerable > 0) {
+                // Mata inimigo
+                e.active = false;
+                player.vy = -BOUNCE_FORCE; // Pulo rebote
+                score += 100;
+                createExplosion(e.x + e.width/2, e.y + e.height/2);
+            } else {
+                // Dano no player
+                takeDamage();
+            }
+        }
+    }
+
+    // Player vs Anéis
+    for (let r of rings) {
+        if (!r.active) continue;
+        let dx = (player.x + player.width/2) - r.x;
+        let dy = (player.y + player.height/2) - r.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+        
+        if (dist < player.width/2 + r.radius) {
+            r.active = false;
+            player.rings++;
+            score += 10;
+        }
+    }
+
+    // Player vs Goal
+    if (!goal.passed && player.x > goal.x) {
+        goal.passed = true;
+        levelComplete();
+    }
+}
+
+function takeDamage() {
+    if (player.invulnerable > 0) return;
+
+    if (player.rings > 0) {
+        // Perde anéis
+        dropRings(player.rings, player.x, player.y);
+        player.rings = 0;
+        player.invulnerable = 120; // 2 segundos
+        player.vx = -player.vx * 0.8; // Knockback
+        player.vy = -5;
+    } else {
+        die();
+    }
+}
+
+function die() {
+    player.dead = true;
+    gameState = 'GAMEOVER';
+    showMenu("GAME OVER", `Você chegou ao Nível ${level}<br>Score: ${score}`, "TENTAR NOVAMENTE");
+}
+
+function levelComplete() {
+    gameState = 'TRANSITION';
+    score += 1000;
+    setTimeout(() => {
+        level++;
+        initLevel();
+    }, 2000);
+}
+
+function initLevel() {
+    // Reset posições mas mantém score/aneis/vidas
+    player.x = 0;
+    player.y = 0;
+    player.vx = 0;
+    player.vy = 0;
+    player.grounded = false;
+    
+    generateLevel(level);
+    gameState = 'PLAYING';
+    
+    // Feedback visual
+    msgLevel.innerText = `NÍVEL ${level}`;
+    msgLevel.style.opacity = 1;
+    setTimeout(() => msgLevel.style.opacity = 0, 2000);
+}
+
+function startGame() {
+    score = 0;
+    level = 1;
+    player = new Player();
+    player.rings = 0;
+    initLevel();
+    menuOverlay.classList.add('hidden');
+    animate();
+}
+
+function showMenu(title, sub, btnText) {
+    menuOverlay.classList.remove('hidden');
+    menuOverlay.querySelector('h1').innerHTML = title;
+    menuOverlay.querySelector('p').innerHTML = sub;
+    menuOverlay.querySelector('button').innerText = btnText;
+}
+
+// Loop Principal
+function animate() {
+    if (gameState === 'MENU') return; // Espera start
+
+    frameCount++;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Lógica
+    if (gameState === 'PLAYING' || gameState === 'TRANSITION') {
+        player.update();
+        
+        // Câmera segue o player (com suavização simples e lookahead)
+        let targetCamX = player.x - canvas.width / 3;
+        // Não deixar a câmera voltar para a esquerda (Sonic style geralmente)
+        if (targetCamX > cameraX) {
+            cameraX += (targetCamX - cameraX) * 0.1;
+        }
+        
+        // Limite inferior do fundo para não bugar
+        if (cameraX < 0) cameraX = 0;
+    }
+
+    // Parallax Background Simples
+    ctx.save();
+    // Céu estático ou lento
+    ctx.fillStyle = '#87CEEB';
+    ctx.fillRect(0,0, canvas.width, canvas.height);
+    
+    // Montanhas ao fundo
+    ctx.fillStyle = '#6ab0cf';
+    for(let i=0; i<10; i++) {
+        let mx = (i * 300) - (cameraX * 0.2) % 300;
+        ctx.beginPath();
+        ctx.moveTo(mx, 450);
+        ctx.lineTo(mx + 150, 250);
+        ctx.lineTo(mx + 300, 450);
+        ctx.fill();
+    }
+    ctx.restore();
+
+    // Desenha Mundo
+    ctx.save();
+    ctx.translate(-cameraX, 0);
+
+    // Plataformas
+    ctx.fillStyle = '#27ae60'; // Grama
+    
+    // Padrão de Xadrez (Checkerboard clássico)
+    for (let p of platforms) {
+        if (p.x + p.width < cameraX || p.x > cameraX + canvas.width) continue;
+        
+        // Topo Grama
+        ctx.fillStyle = '#2ecc71';
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        
+        // Detalhe Xadrez Marrom
+        ctx.fillStyle = '#8B4513'; // Terra
+        ctx.fillRect(p.x, p.y + 20, p.width, p.height - 20);
+        
+        // Decorativo xadrez na lateral
+        ctx.fillStyle = '#A0522D';
+        for(let tx = 0; tx < p.width; tx+=40) {
+            ctx.fillRect(p.x + tx, p.y+20, 20, 20);
+            if (p.y+60 < p.height) ctx.fillRect(p.x + tx + 20, p.y+40, 20, 20);
+        }
+    }
+
+    // Entidades
+    goal.update();
+    goal.draw(ctx);
+
+    enemies.forEach(e => { e.update(); e.draw(ctx); });
+    rings.forEach(r => { r.update(); r.draw(ctx); });
+    particles.forEach((p, index) => {
+        p.update();
+        p.draw(ctx);
+        if (p.life <= 0) particles.splice(index, 1);
+    });
+
+    player.draw(ctx);
+
+    ctx.restore();
+
+    // Colisões e Estado
+    if (gameState === 'PLAYING') {
+        checkCollisions();
+    }
+
+    // Atualiza HUD
+    uiScore.innerText = Math.floor(score);
+    uiLevel.innerText = level;
+    uiRings.innerText = player.rings;
+    
+    // Loop
+    if (gameState !== 'MENU') {
+        requestAnimationFrame(animate);
+    }
+}
+
+// Event Listeners
+window.addEventListener('keydown', e => {
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = true;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = true;
+    if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') {
+        keys.up = true;
+        // Evitar scroll da página com espaço
+        if(e.code === 'Space') e.preventDefault(); 
+    }
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = true;
+});
+
+window.addEventListener('keyup', e => {
+    if (e.code === 'ArrowRight' || e.code === 'KeyD') keys.right = false;
+    if (e.code === 'ArrowLeft' || e.code === 'KeyA') keys.left = false;
+    if (e.code === 'ArrowUp' || e.code === 'Space' || e.code === 'KeyW') keys.up = false;
+    if (e.code === 'ArrowDown' || e.code === 'KeyS') keys.down = false;
+});
+
+</script>
+</body>
+</html>

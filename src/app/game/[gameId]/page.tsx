@@ -8,8 +8,9 @@ import styles from './page.module.css';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import { useCart } from '@/context/CartContext';
+import WishlistButton from '@/components/WishlistButton'; 
 
-// --- COMPONENTE DE ESTRELAS ---
+// --- COMPONENTE DE ESTRELAS CORRIGIDO ---
 interface StarRatingProps {
   rating: number;
   setRating?: (r: number) => void;
@@ -21,22 +22,36 @@ function StarRating({ rating, setRating, readOnly = false, size = 24 }: StarRati
   const [hoverRating, setHoverRating] = useState(0);
 
   return (
-    <div className={styles.starsContainer} onMouseLeave={() => setHoverRating(0)}>
+    <div 
+      className={styles.starsContainer} 
+      onMouseLeave={() => setHoverRating(0)}
+      style={{ display: 'flex', gap: '5px', position: 'relative', zIndex: 10 }} // Força layout e z-index
+    >
       {[1, 2, 3, 4, 5].map((star) => {
         const fill = readOnly ? (star <= rating) : (star <= (hoverRating || rating));
         return (
           <button
             key={star}
-            type="button"
-            className={styles.starButton}
+            type="button" // Essencial para evitar submit de forms
             style={{ 
               fontSize: size, 
               color: fill ? '#FFD700' : '#444',
-              cursor: readOnly ? 'default' : 'pointer'
+              cursor: readOnly ? 'default' : 'pointer',
+              background: 'transparent',
+              border: 'none',
+              padding: 0,
+              lineHeight: 1,
+              transition: 'transform 0.1s',
             }}
-            onClick={() => !readOnly && setRating && setRating(star)}
+            // Adiciona scale no hover via inline style condicional
             onMouseEnter={() => !readOnly && setHoverRating(star)}
+            onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!readOnly && setRating) setRating(star);
+            }}
             disabled={readOnly}
+            title={readOnly ? `Nota: ${rating}` : `Avaliar com ${star} estrelas`}
           >
             ★
           </button>
@@ -135,7 +150,12 @@ export default function GameDetailPage() {
 
   // --- AÇÕES ---
   const handleRateGame = async (rating: number) => {
-    if (!token) return;
+    if (!token) {
+        alert("Erro: Você parece estar deslogado. Tente recarregar a página.");
+        return;
+    }
+    
+    // Atualiza estado local imediatamente para feedback visual
     setUserRating(rating);
     setIsSubmittingReview(true);
 
@@ -150,10 +170,12 @@ export default function GameDetailPage() {
       });
 
       if (!res.ok) throw new Error('Erro ao avaliar');
+      
+      // Recarrega dados para atualizar a média global
       await loadGameData(); 
     } catch (err) {
       console.error(err);
-      alert('Erro ao salvar sua avaliação.');
+      alert('Erro ao salvar sua avaliação no servidor.');
     } finally {
       setIsSubmittingReview(false);
     }
@@ -189,7 +211,6 @@ export default function GameDetailPage() {
 
   return (
     <main className={styles.page}>
-      {/* Background Borrado */}
       <div className={styles.backdrop}>
         <Image 
           src={game.imageUrl} 
@@ -204,7 +225,6 @@ export default function GameDetailPage() {
       <div className={styles.container}>
         <div className={styles.contentGrid}>
           
-          {/* COLUNA ESQUERDA: CAPA (POSTER) */}
           <div className={styles.leftColumn}>
             <div className={styles.posterWrapper}>
               <Image 
@@ -216,7 +236,6 @@ export default function GameDetailPage() {
               />
             </div>
             
-            {/* Infos curtas abaixo da capa */}
             <div className={styles.metaData}>
               <div className={styles.metaItem}>
                 <span>Gênero</span>
@@ -233,7 +252,6 @@ export default function GameDetailPage() {
             </div>
           </div>
 
-          {/* COLUNA DIREITA: DETALHES */}
           <div className={styles.rightColumn}>
             <h1 className={styles.title}>{game.title}</h1>
             
@@ -247,7 +265,6 @@ export default function GameDetailPage() {
               <span className={styles.totalReviews}>{game.totalReviews} avaliações</span>
             </div>
 
-            {/* CARTÃO DE PREÇO/AÇÃO */}
             <div className={styles.actionCard}>
               <div className={styles.priceTag}>
                 {ownsGame ? (
@@ -258,7 +275,16 @@ export default function GameDetailPage() {
                    </span>
                 )}
               </div>
+              
               <div className={styles.actionButtons}>
+                
+                {/* --- BOTÃO WISHLIST (40px) --- */}
+                {!ownsGame && (
+                    <div style={{ marginRight: '15px' }}>
+                        <WishlistButton gameId={game.id} size={40} />
+                    </div>
+                )}
+                
                 {renderBuyButton()}
               </div>
             </div>
@@ -268,12 +294,13 @@ export default function GameDetailPage() {
             <h3 className={styles.sectionTitle}>Sobre este jogo</h3>
             <p className={styles.description}>{game.description}</p>
 
-            {/* ÁREA DE AVALIAÇÃO DO USUÁRIO */}
+            {/* SEÇÃO DE AVALIAÇÃO - Só aparece se comprou */}
             {ownsGame && (
               <div className={styles.userReviewSection}>
                 <h3>Sua Análise</h3>
                 <p>O que você achou deste jogo?</p>
                 <div className={styles.userRatingWrapper}>
+                    {/* Estrelas interativas */}
                     <StarRating 
                         rating={userRating} 
                         setRating={handleRateGame} 

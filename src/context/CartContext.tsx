@@ -1,10 +1,9 @@
-// src/context/CartContext.tsx
 'use client';
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 
-// Tipo do Jogo (simplificado)
+// Tipos
 interface Game {
   id: string;
   title: string;
@@ -12,10 +11,15 @@ interface Game {
   imageUrl: string;
 }
 
-// Tipo do Item do Carrinho (como vem da API)
 export interface CartItemType {
-  id: string; // Este é o ID do CartItem
+  id: string;
   game: Game;
+}
+
+export interface Coupon {
+  code: string;
+  discount: number;
+  type: 'PERCENTAGE' | 'FIXED';
 }
 
 interface CartContextType {
@@ -27,26 +31,28 @@ interface CartContextType {
   addToCart: (gameId: string) => Promise<void>;
   removeFromCart: (itemId: string) => Promise<void>;
   isGameInCart: (gameId: string) => boolean;
-  clearCart: () => void; // Vamos precisar disso no checkout
+  clearCart: () => void;
+  // Cupons
+  applyCoupon: (coupon: Coupon) => void;
+  removeCoupon: () => void;
+  coupon: Coupon | null;
+  totalWithDiscount: number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItemType[]>([]);
+  const [coupon, setCoupon] = useState<Coupon | null>(null); // Estado do cupom
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
   const { token, user } = useAuth();
 
-  const itemData = {
-    itemCount: items.length,
-    totalPrice: items.reduce((total, item) => total + item.game.price, 0),
-  };
-
-  // Função para buscar o carrinho da API
+  // Busca carrinho
   const fetchCart = useCallback(async () => {
     if (!token) {
-      setItems([]); // Se não há token, limpa o carrinho
+      setItems([]);
       setIsLoading(false);
       return;
     }
@@ -66,12 +72,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [token]);
 
-  // Busca o carrinho quando o usuário loga
   useEffect(() => {
     fetchCart();
   }, [user, fetchCart]);
   
-  // Adiciona ao carrinho
   const addToCart = async (gameId: string) => {
     if (!token) throw new Error('Você precisa estar logado');
     setError(null);
@@ -87,15 +91,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Erro ao adicionar');
       
-      // Adiciona o novo item ao estado local
       setItems((prevItems) => [...prevItems, data]);
     } catch (err: any) {
       setError(err.message);
-      throw err; // Lança o erro para a página (ex: GameDetailPage)
+      throw err;
     }
   };
 
-  // Remove do carrinho
   const removeFromCart = async (itemId: string) => {
     if (!token) throw new Error('Você precisa estar logado');
     setError(null);
@@ -106,7 +108,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
       });
       if (!response.ok) throw new Error('Erro ao remover');
       
-      // Remove o item do estado local
       setItems((prevItems) => prevItems.filter(item => item.id !== itemId));
     } catch (err: any) {
       setError(err.message);
@@ -114,25 +115,53 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
   
-  // Limpa o carrinho (usado após a compra)
-  const clearCart = () => setItems([]);
+  const clearCart = () => {
+    setItems([]);
+    setCoupon(null);
+  };
   
-  // Verifica se um JOGO (por gameId) está no carrinho
   const isGameInCart = (gameId: string) => {
     return items.some(item => item.game.id === gameId);
   };
+
+  // --- LÓGICA DE CUPONS ---
+  const applyCoupon = (newCoupon: Coupon) => {
+    setCoupon(newCoupon);
+  };
+
+  const removeCoupon = () => {
+    setCoupon(null);
+  };
+
+  // --- CÁLCULOS DE PREÇO ---
+  const totalPrice = items.reduce((total, item) => total + item.game.price, 0);
+
+  let totalWithDiscount = totalPrice;
+  if (coupon) {
+    if (coupon.type === 'PERCENTAGE') {
+      totalWithDiscount = totalPrice - (totalPrice * (coupon.discount / 100));
+    } else {
+      totalWithDiscount = totalPrice - coupon.discount;
+    }
+  }
+  if (totalWithDiscount < 0) totalWithDiscount = 0;
 
   return (
     <CartContext.Provider
       value={{
         items,
-        ...itemData,
+        itemCount: items.length,
+        totalPrice,
         isLoading,
         error,
         addToCart,
         removeFromCart,
         isGameInCart,
         clearCart,
+        applyCoupon,
+        removeCoupon,
+        coupon,
+        totalWithDiscount
       }}
     >
       {children}

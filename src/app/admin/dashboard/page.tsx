@@ -9,40 +9,37 @@ import AdminGuard from '@/components/AdminGuard';
 function DashboardContent() {
   const { user, token } = useAuth();
   
-  // Estados para números (KPIs)
   const [stats, setStats] = useState({
     totalGames: 0,
     pendingGames: 0,
-    activeUsers: 0, // Mockado ou vindo da API
-    revenue: 0      // Mockado ou vindo da API
+    activeUsers: 0,
+    revenue: 0,
+    totalSales: 0 // <--- Novo Estado
   });
 
   const [loading, setLoading] = useState(true);
 
-  // Simulação de busca de dados (ou conecte com sua API real)
   useEffect(() => {
     const fetchStats = async () => {
       if (!token) return;
       
       try {
-        // Aqui você faria um fetch para uma rota tipo '/api/admin/stats'
-        // Como exemplo, vou buscar os jogos pendentes para preencher o número real
-        const resPending = await fetch('/api/admin/games', {
+        const response = await fetch('/api/admin/stats', {
           headers: { Authorization: `Bearer ${token}` } 
         });
         
-        // Buscando total de jogos (apenas exemplo, ajuste conforme sua API)
-        const resAll = await fetch('/api/games');
+        if (!response.ok) throw new Error('Falha ao buscar estatísticas');
 
-        const pendingData = resPending.ok ? await resPending.json() : [];
-        const allData = resAll.ok ? await resAll.json() : [];
+        const data = await response.json();
 
         setStats({
-          totalGames: allData.length,
-          pendingGames: pendingData.length,
-          activeUsers: 145, // Exemplo estático (Fictício)
-          revenue: 12500.50 // Exemplo estático (Fictício)
+          totalGames: data.totalGames,
+          pendingGames: data.pendingGames,
+          activeUsers: data.activeUsers,
+          revenue: data.revenue,
+          totalSales: data.totalSales // <--- Pegando da API
         });
+
       } catch (error) {
         console.error("Erro ao carregar estatísticas", error);
       } finally {
@@ -65,10 +62,10 @@ function DashboardContent() {
         </div>
       </header>
 
-      {/* 1. GRID DE ESTATÍSTICAS (KPIs) */}
+      {/* GRID DE ESTATÍSTICAS (KPIs) */}
       <section className={styles.kpiGrid}>
         
-        {/* Card 1: Vendas */}
+        {/* Card 1: Receita */}
         <div className={styles.kpiCard}>
           <div className={styles.kpiHeader}>
              <span className={styles.icon}>💰</span>
@@ -77,53 +74,55 @@ function DashboardContent() {
           <div className={styles.kpiValue}>
              {loading ? '...' : `R$ ${stats.revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`}
           </div>
-          <span className={`${styles.trend} ${styles.up}`}>+12% este mês</span>
+          <span className={`${styles.trend} ${styles.up}`}>Vendas totais</span>
         </div>
 
-        {/* Card 2: Jogos Ativos */}
+        {/* --- NOVO CARD: TOTAL VENDIDO --- */}
+        <div className={styles.kpiCard}>
+          <div className={styles.kpiHeader}>
+             <span className={styles.icon}>🛒</span>
+             <span className={styles.kpiLabel}>Jogos Vendidos</span>
+          </div>
+          <div className={styles.kpiValue}>
+             {loading ? '...' : stats.totalSales}
+          </div>
+          <span className={styles.trend}>Cópias comercializadas</span>
+        </div>
+        {/* ------------------------------- */}
+
+        {/* Card 3: Jogos na Loja */}
         <div className={styles.kpiCard}>
           <div className={styles.kpiHeader}>
              <span className={styles.icon}>🎮</span>
-             <span className={styles.kpiLabel}>Jogos na Loja</span>
+             <span className={styles.kpiLabel}>Catálogo</span>
           </div>
           <div className={styles.kpiValue}>
              {loading ? '...' : stats.totalGames}
           </div>
-          <span className={styles.trend}>Biblioteca crescendo</span>
+          <span className={styles.trend}>Jogos ativos</span>
         </div>
 
-        {/* Card 3: Usuários */}
-        <div className={styles.kpiCard}>
-          <div className={styles.kpiHeader}>
-             <span className={styles.icon}>👥</span>
-             <span className={styles.kpiLabel}>Usuários Ativos</span>
-          </div>
-          <div className={styles.kpiValue}>
-             {loading ? '...' : stats.activeUsers}
-          </div>
-          <span className={`${styles.trend} ${styles.up}`}>+5 novos hoje</span>
-        </div>
-
-        {/* Card 4: Pendentes (Importante) */}
+        {/* Card 4: Pendentes */}
         <div className={`${styles.kpiCard} ${stats.pendingGames > 0 ? styles.alertCard : ''}`}>
           <div className={styles.kpiHeader}>
              <span className={styles.icon}>⏳</span>
-             <span className={styles.kpiLabel}>Aprovações Pendentes</span>
+             <span className={styles.kpiLabel}>Pendentes</span>
           </div>
           <div className={styles.kpiValue}>
              {loading ? '...' : stats.pendingGames}
           </div>
           {stats.pendingGames > 0 ? (
              <Link href="/admin/dashboard/approvals" className={styles.actionLink}>
-               Revisar agora →
+               Revisar →
              </Link>
           ) : (
-            <span className={styles.trend}>Tudo em dia!</span>
+            <span className={styles.trend}>Em dia!</span>
           )}
         </div>
+
       </section>
 
-      {/* 2. ATALHOS RÁPIDOS */}
+      {/* Ações Rápidas */}
       <section className={styles.actionsSection}>
         <h2 className={styles.sectionTitle}>Ações Rápidas</h2>
         <div className={styles.actionsGrid}>

@@ -291,3 +291,98 @@
   font-size: 0.9rem;
   text-shadow: 0 2px 4px rgba(0,0,0,0.8);
 }
+
+/* ... (mantenha seu CSS anterior de Hero, Grid, CardWrapper, etc) ... */
+
+/* --- CATEGORIAS (NOVO) --- */
+.categoriesSection {
+  padding: 4rem 2rem;
+  background-color: #151515; /* Fundo levemente diferente */
+  text-align: center;
+}
+
+.sectionTitleCenter {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #fff;
+}
+
+.categoriesGrid {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.categoryCard {
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 12px;
+  width: 150px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #ccc;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.categoryCard:hover {
+  background: #7000ff;
+  color: white;
+  transform: translateY(-5px);
+  border-color: #7000ff;
+}
+
+.categoryCard span {
+  font-weight: 600;
+}
+
+
+/* --- BANNER DEVS (NOVO) --- */
+.devBanner {
+  margin: 4rem 2rem;
+  padding: 4rem 2rem;
+  background: linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 100%);
+  border-radius: 20px;
+  text-align: center;
+  border: 1px solid #333;
+}
+
+.devContent h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.devContent p {
+  color: #aaa;
+  font-size: 1.1rem;
+  margin-bottom: 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.secondaryButton {
+  display: inline-block;
+  padding: 1rem 2.5rem;
+  background: transparent;
+  border: 2px solid #7000ff;
+  color: #7000ff;
+  font-weight: 700;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  background: #7000ff;
+  color: white;
+}

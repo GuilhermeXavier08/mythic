@@ -1,117 +1,177 @@
-// src/app/checkout/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import Link from 'next/link';
-import styles from './page.module.css'; // Vamos criar este CSS
+import styles from './page.module.css'; 
 import LoadingSpinner from '@/components/LoadingSpinner';
+import NonAdminGuard from '@/components/NonAdminGuard';
 
-export default function CheckoutPage() {
-  const { totalPrice, itemCount, clearCart, isLoading: isCartLoading } = useCart();
-  const { token } = useAuth();
+function CheckoutContent() {
+  const { 
+    items, 
+    totalPrice, 
+    totalWithDiscount, 
+    coupon, // <--- Importante: Pegamos o cupão aqui
+    clearCart,
+    isLoading: isCartLoading 
+  } = useCart();
+  
+  const { user, token } = useAuth();
   const router = useRouter();
 
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [success, setSuccess] = useState(false);
+  const [error, setError] = useState('');
 
-  // A função que estava no carrinho, agora está aqui
-  const handleCheckout = async () => {
-    if (!token) {
-      setCheckoutError('Você precisa estar logado para finalizar a compra.');
-      return;
+  // Redireciona se carrinho estiver vazio
+  useEffect(() => {
+    if (!isCartLoading && items.length === 0 && !success) {
+      router.replace('/cart');
     }
-    
-    setIsCheckingOut(true);
-    setCheckoutError(null);
+  }, [isCartLoading, items, router, success]);
+
+  const handleFinishPurchase = async () => {
+    if (!token) return;
+    setIsProcessing(true);
+    setError('');
 
     try {
-      const response = await fetch('/api/checkout', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         },
+        // --- MUDANÇA: ENVIAMOS O CÓDIGO DO CUPÃO ---
+        body: JSON.stringify({ 
+            couponCode: coupon ? coupon.code : null 
+        })
+        // -------------------------------------------
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || 'Não foi possível finalizar a compra.');
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Erro ao processar compra');
       }
 
-      // --- SUCESSO! ---
-      clearCart(); // 1. Limpa o carrinho no frontend (Context)
-      router.push('/library'); // 2. Redireciona para a biblioteca
+      // Sucesso!
+      setSuccess(true);
+      clearCart(); 
+
+      // Redireciona após 3 segundos
+      setTimeout(() => {
+        router.push('/library');
+      }, 3000);
 
     } catch (err: any) {
-      setCheckoutError(err.message);
-    } finally {
-      setIsCheckingOut(false);
+      setError(err.message);
+      setIsProcessing(false);
     }
   };
 
-  if (isCartLoading) {
-    return <LoadingSpinner />;
-  }
+  if (isCartLoading) return <div className={styles.center}><LoadingSpinner /></div>;
 
-  if (itemCount === 0 && !isCheckingOut) {
-    // Se o carrinho ficou vazio por algum motivo, não deixa finalizar
+  // Tela de Sucesso
+  if (success) {
     return (
-      <main className={styles.page}>
-        <div className={styles.empty}>
-          <p>Seu carrinho está vazio.</p>
-          <Link href="/store" className={styles.button}>
-            Voltar para a Loja
-          </Link>
-        </div>
+      <main className={styles.container} style={{ textAlign: 'center', marginTop: '5rem' }}>
+        <div style={{ fontSize: '4rem', marginBottom: '1rem' }}></div>
+        <h1 style={{ color: '#4ade80', fontSize: '2rem', marginBottom: '1rem' }}>Compra Realizada com Sucesso!</h1>
+        <p style={{ color: '#ccc', fontSize: '1.2rem' }}>Seus jogos já estão na sua biblioteca.</p>
+        <p style={{ color: '#888', marginTop: '2rem' }}>Redirecionando...</p>
       </main>
     );
   }
 
   return (
-    <main className={styles.page}>
-      <div className={styles.container}>
-        <h1 className={styles.title}>Finalizar Compra</h1>
+    <main className={styles.container} style={{ maxWidth: '1000px', margin: '0 auto', padding: '2rem', color: '#fff' }}>
+      <h1 style={{ fontSize: '2rem', marginBottom: '2rem', borderBottom: '1px solid #333', paddingBottom: '1rem' }}>
+        Finalizar Compra
+      </h1>
 
-        {/* Aqui você pode adicionar formulários de pagamento (Stripe, etc) */}
-        <p className={styles.info}>
-          Revise seu pedido. Esta loja é um projeto de demonstração e nenhum
-          pagamento real será processado.
-        </p>
-
-        {/* Resumo do Pedido */}
-        <div className={styles.summary}>
-          <h2 className={styles.summaryTitle}>Resumo do Pedido</h2>
-          <div className={styles.summaryRow}>
-            <span>Subtotal ({itemCount} {itemCount > 1 ? 'itens' : 'item'})</span>
-            <span className={styles.totalPrice}>R$ {totalPrice.toFixed(2)}</span>
-          </div>
-          <div className={styles.summaryRow}>
-            <span>Impostos</span>
-            <span>R$ 0,00</span>
-          </div>
-          <hr className={styles.divider} />
-          <div className={styles.summaryRow} data-total="true">
-            <span>Total</span>
-            <span className={styles.totalPrice}>R$ {totalPrice.toFixed(2)}</span>
-          </div>
-          <button 
-            className={styles.checkoutButton}
-            onClick={handleCheckout}
-            disabled={isCheckingOut || itemCount === 0}
-          >
-            {isCheckingOut ? 'Processando...' : 'Confirmar e Comprar'}
-          </button>
-          {checkoutError && (
-            <p className={styles.error}>{checkoutError}</p>
-          )}
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
         
-        <Link href="/cart" className={styles.backLink}>
-          &larr; Voltar ao Carrinho
-        </Link>
+        {/* ESQUERDA: Revisão dos Itens */}
+        <div>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#ccc' }}>Itens do Pedido</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {items.map(item => (
+              <div key={item.id} style={{ 
+                display: 'flex', gap: '1rem', background: '#1a1a1a', 
+                padding: '10px', borderRadius: '8px', border: '1px solid #333' 
+              }}>
+                <Image 
+                  src={item.game.imageUrl} 
+                  alt={item.game.title} 
+                  width={80} height={45} 
+                  style={{ objectFit: 'cover', borderRadius: '4px' }} 
+                />
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ fontSize: '1rem', margin: 0 }}>{item.game.title}</h3>
+                  <span style={{ fontSize: '0.9rem', color: '#888' }}>
+                     {item.game.price === 0 ? 'Grátis' : `R$ ${item.game.price.toFixed(2)}`}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* DIREITA: Resumo Financeiro */}
+        <div style={{ background: '#1a1a1a', padding: '1.5rem', borderRadius: '12px', border: '1px solid #333', height: 'fit-content' }}>
+          <h2 style={{ fontSize: '1.2rem', marginBottom: '1.5rem' }}>Resumo</h2>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#ccc' }}>
+            <span>Subtotal</span>
+            <span>R$ {totalPrice.toFixed(2)}</span>
+          </div>
+
+          {coupon && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', color: '#4ade80' }}>
+              <span>Desconto ({coupon.code})</span>
+              <span>- R$ {(totalPrice - totalWithDiscount).toFixed(2)}</span>
+            </div>
+          )}
+
+          <div style={{ height: '1px', background: '#333', margin: '1rem 0' }}></div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', fontSize: '1.5rem', fontWeight: 'bold' }}>
+            <span>Total</span>
+            <span>R$ {totalWithDiscount.toFixed(2)}</span>
+          </div>
+
+          {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</p>}
+
+          <button 
+            onClick={handleFinishPurchase}
+            disabled={isProcessing}
+            style={{
+              width: '100%', padding: '1rem', background: '#7000ff', border: 'none',
+              borderRadius: '6px', color: 'white', fontWeight: 'bold', fontSize: '1rem',
+              cursor: isProcessing ? 'not-allowed' : 'pointer', opacity: isProcessing ? 0.7 : 1
+            }}
+          >
+            {isProcessing ? 'Processando...' : 'Confirmar Pagamento'}
+          </button>
+          
+          <Link href="/cart" style={{ display: 'block', textAlign: 'center', marginTop: '1rem', color: '#888', fontSize: '0.9rem' }}>
+            Voltar ao carrinho
+          </Link>
+        </div>
+
       </div>
     </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <NonAdminGuard>
+      <CheckoutContent />
+    </NonAdminGuard>
   );
 }

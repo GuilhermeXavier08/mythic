@@ -66,6 +66,10 @@ model User {
   // --- ADICIONE ESTAS DUAS LINHAS AQUI EMBAIXO ---
   sentMessages      Message[]           @relation("SentMessages")
   receivedMessages  Message[]           @relation("ReceivedMessages")
+
+  wishlist      Wishlist[]
+  badges        UserBadge[]
+  notifications Notification[]
 }
 
 // Adicione isso no enum de Role ou logo abaixo dele
@@ -85,30 +89,27 @@ enum GameGenre {
 model Game {
   id          String     @id @default(cuid())
   title       String
-  
-  // --- MUDE ESTA LINHA ---
-  description String     @db.Text 
-  // -----------------------
-  
+  description String     @db.Text
   price       Float
-  imageUrl    String   @db.LongText
+  imageUrl    String
   gameUrl     String     @default("")
-  
   genre       GameGenre  @default(OUTRO)
   createdAt   DateTime   @default(now())
-  
   status      GameStatus @default(PENDING)
-
+  
   developerId String
   developer   User       @relation(fields: [developerId], references: [id])
 
-  purchases Purchase[]
-  cartItems CartItem[]
-  reviews   Review[]     // Se já adicionou reviews
+  purchases   Purchase[]
+  cartItems   CartItem[]
+  reviews     Review[]
+  
+  // --- ADICIONE ESTA LINHA ---
+  wishlists   Wishlist[] 
+  // ---------------------------
 
   @@unique([developerId, title])
 }
-
 // Adicione o modelo Review
 model Review {
   id        String   @id @default(cuid())
@@ -134,6 +135,9 @@ model Purchase {
 
   user User @relation(fields: [userId], references: [id])
   game Game @relation(fields: [gameId], references: [id])
+  // --- ADICIONE ESTE CAMPO ---
+  pricePaid Float    @default(0) 
+  // ---------------------------
 
   @@unique([userId, gameId])
 }
@@ -199,4 +203,65 @@ model Message {
 
   // Índice para deixar a busca de conversas mais rápida
   @@index([senderId, receiverId])
+}
+
+// 1. WISHLIST (Lista de Desejos)
+model Wishlist {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id])
+  createdAt DateTime @default(now())
+
+  @@unique([userId, gameId]) // Impede duplicata
+}
+
+// 3. BADGES (Conquistas)
+model Badge {
+  id          String      @id @default(cuid())
+  code        String      @unique // ex: "FIRST_BUY", "DEV_HERO"
+  name        String
+  description String
+  iconUrl     String // Emoji ou URL de imagem
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  badgeId   String
+  badge     Badge    @relation(fields: [badgeId], references: [id])
+  earnedAt  DateTime @default(now())
+
+  @@unique([userId, badgeId])
+}
+
+// 4. NOTIFICATIONS (Notificações)
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  message   String
+  link      String?  // Link para onde vai ao clicar (opcional)
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// 6. COUPONS (Cupons)
+model Coupon {
+  id        String    @id @default(cuid())
+  code      String    @unique // ex: "MYTHIC10"
+  discount  Float     // Valor do desconto (ex: 10 ou 0.10)
+  type      CouponType @default(PERCENTAGE)
+  maxUses   Int       @default(100) // Limite de uso global
+  usedCount Int       @default(0)
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+}
+
+enum CouponType {
+  PERCENTAGE // Desconto em % (ex: 10 = 10%)
+  FIXED      // Desconto fixo (ex: 5 = R$ 5,00)
 }

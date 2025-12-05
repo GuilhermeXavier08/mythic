@@ -1,3 +1,4 @@
+// src/app/page.tsx
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
@@ -6,6 +7,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image'; 
 import { useRouter } from 'next/navigation';
+import { FaGamepad, FaGhost, FaChessKnight, FaRocket } from 'react-icons/fa';
 
 interface Game {
   id: string;
@@ -15,7 +17,7 @@ interface Game {
 }
 
 export default function Home() {
-  const { user, isAdmin, isLoading: isAuthLoading } = useAuth();
+  const { isAdmin, isLoading: isAuthLoading } = useAuth(); // removi 'user' que não estava usando
   const router = useRouter(); 
   
   const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
@@ -28,7 +30,7 @@ export default function Home() {
     }
   }, [isAdmin, isAuthLoading, router]);
 
-  // --- BUSCAR JOGOS (Apenas se NÃO for admin) ---
+  // --- BUSCAR JOGOS ---
   useEffect(() => {
     if (!isAuthLoading && !isAdmin) {
       const fetchGames = async () => {
@@ -36,8 +38,7 @@ export default function Home() {
           const response = await fetch('/api/games');
           if (!response.ok) throw new Error('Falha ao carregar jogos');
           const data = await response.json();
-          // Pega apenas os 8 primeiros
-          setFeaturedGames(data.slice(0, 8));
+          setFeaturedGames(data.slice(0, 4));
         } catch (error) {
           console.error(error);
         } finally {
@@ -50,7 +51,6 @@ export default function Home() {
     }
   }, [isAdmin, isAuthLoading]);
 
-  // Loading Screen
   if (isAuthLoading) {
     return (
       <main className={styles.loadingContainer}>
@@ -60,12 +60,8 @@ export default function Home() {
     );
   }
 
-  // Se for Admin, retorna null para não piscar a tela antes do redirect
-  if (isAdmin) {
-    return null; 
-  }
+  if (isAdmin) return null; 
 
-  // --- HOME PADRÃO (Usuário Comum) ---
   return (
     <main className={styles.main}>
       
@@ -75,12 +71,36 @@ export default function Home() {
           <span className={styles.heroTag}>Destaque da Semana</span>
           <h1 className={styles.heroTitle}>Explore Novos Mundos</h1>
           <p className={styles.heroSubtitle}>Descubra as melhores ofertas e lançamentos exclusivos da Mythic.</p>
-          <button className={styles.ctaButton}>Ver Ofertas</button>
+          <Link href="/store" className={styles.ctaButton}>Ver Ofertas</Link>
         </div>
         <div className={styles.heroOverlay}></div>
       </section>
 
-      {/* GRID DE JOGOS */}
+      {/* --- CATEGORIAS POPULARES (COM LINKS CORRIGIDOS) --- */}
+      <section className={styles.categoriesSection}>
+         <h2 className={styles.sectionTitleCenter}>Navegue por Gênero</h2>
+         <div className={styles.categoriesGrid}>
+            {/* Adicionamos ?genre=VALOR em cada link */}
+            <Link href="/store?genre=ACAO" className={styles.categoryCard}>
+               <FaGamepad size={30} />
+               <span>Ação</span>
+            </Link>
+            <Link href="/store?genre=TERROR" className={styles.categoryCard}>
+               <FaGhost size={30} />
+               <span>Terror</span>
+            </Link>
+            <Link href="/store?genre=RPG" className={styles.categoryCard}>
+               <FaChessKnight size={30} />
+               <span>RPG</span>
+            </Link>
+            <Link href="/store?genre=ESTRATEGIA" className={styles.categoryCard}>
+               <FaRocket size={30} />
+               <span>Estratégia</span>
+            </Link>
+         </div>
+      </section>
+
+      {/* JOGOS EM DESTAQUE */}
       <section className={styles.section}>
         <div className={styles.sectionHeader}>
           <h2 className={styles.sectionTitle}>Jogos em Destaque</h2>
@@ -95,22 +115,18 @@ export default function Home() {
           <div className={styles.grid}>
             {featuredGames.length > 0 ? (
               featuredGames.map((game) => (
-                /* CONSTRUÇÃO MANUAL DO CARD (Sem component GameCard para evitar bugs visuais) */
                 <Link 
                   key={game.id} 
                   href={`/game/${game.id}`} 
                   className={styles.cardWrapper}
                 >
-                  {/* Imagem */}
                   <Image 
                     src={game.imageUrl} 
                     alt={game.title}
                     fill
                     sizes="(max-width: 768px) 50vw, 20vw"
-                    className={styles.cardImage} // Precisa estar no CSS (veja abaixo)
+                    className={styles.cardImage} 
                   />
-
-                  {/* Overlay */}
                   <div className={styles.cardOverlay}>
                     <span className={styles.cardTitle}>{game.title}</span>
                     <span className={styles.cardPrice}>
@@ -124,6 +140,17 @@ export default function Home() {
             )}
           </div>
         )}
+      </section>
+
+      {/* BANNER DEVS */}
+      <section className={styles.devBanner}>
+         <div className={styles.devContent}>
+            <h2>É Desenvolvedor?</h2>
+            <p>Publique seu jogo na Mythic Store e alcance milhares de jogadores hoje mesmo.</p>
+            <Link href="/submit-game" className={styles.secondaryButton}>
+               Publicar Jogo
+            </Link>
+         </div>
       </section>
 
       <footer className={styles.footer}>

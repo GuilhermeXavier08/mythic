@@ -3,20 +3,21 @@
 import Link from 'next/link';
 import styles from './Header.module.css';
 import { useAuth } from '@/context/AuthContext';
-import { FaUserCircle } from 'react-icons/fa';
+import { FaUserCircle, FaHeart } from 'react-icons/fa';
 import { useState } from 'react';
 import { useCart } from '@/context/CartContext';
 import CartIcon from './CartIcon';
+import NotificationBell from './NotificationBell';
 
 export default function Header() {
   const { user, logout, isAdmin } = useAuth();
   const { itemCount } = useCart();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Variável para identificar usuário comum (NÃO Admin)
+  // Variável auxiliar para usuário comum
   const isUser = user && !isAdmin;
 
-  // Destino da Logo: Admin vai pro Dashboard, User vai pra Home
+  // Destino da Logo
   const logoDestination = isAdmin ? '/admin/dashboard' : '/';
 
   const toggleMenu = () => {
@@ -27,13 +28,13 @@ export default function Header() {
     <header className={styles.header}>
       <div className={styles.container}>
         
-        {/* ESQUERDA: Logo e Navegação Principal */}
+        {/* ESQUERDA: Logo e Navegação */}
         <div className={styles.leftSection}>
           <Link href={logoDestination} className={styles.logo}>
             Mythic
           </Link>
 
-          {/* Menu de Navegação (SÓ APARECE SE FOR USUÁRIO COMUM) */}
+          {/* Menu de Navegação (Apenas Usuário Comum) */}
           {isUser && (
             <nav className={styles.nav}>
               <Link href="/store" className={styles.navLink}>Loja</Link>
@@ -43,18 +44,31 @@ export default function Header() {
           )}
         </div>
 
-        {/* DIREITA: Ações de Usuário */}
+        {/* DIREITA: Ações e Perfil */}
         <div className={styles.authSection}>
           {user ? (
             <>
-              {/* Botões Específicos de Usuário Comum */}
+              {/* --- BOTÕES ESPECÍFICOS DE ADMIN --- */}
+              {isAdmin && (
+                <Link href="/admin/dashboard" className={styles.adminButton}>
+                  Painel Admin
+                </Link>
+              )}
+
+              {/* --- BOTÕES ESPECÍFICOS DE USUÁRIO COMUM --- */}
               {isUser && (
                 <>
                   <Link href="/submit-game" className={styles.submitButton}>
                     Enviar Jogo
                   </Link>
                   
-                  <Link href="/cart" className={styles.cartLink}>
+                  {/* Ícone Wishlist */}
+                  <Link href="/wishlist" className={styles.cartLink} title="Lista de Desejos">
+                    <FaHeart size={20} />
+                  </Link>
+
+                  {/* Ícone Carrinho */}
+                  <Link href="/cart" className={styles.cartLink} title="Carrinho">
                     <CartIcon />
                     {itemCount > 0 && (
                       <span className={styles.cartCount}>{itemCount}</span>
@@ -63,32 +77,30 @@ export default function Header() {
                 </>
               )}
 
-              {/* Menu de Perfil (Avatar) - Aparece para AMBOS (User e Admin) */}
+              {/* --- GERAL: NOTIFICAÇÕES --- */}
+              <div style={{ margin: '0 10px' }}>
+                 <NotificationBell />
+              </div>
+
+              {/* --- MENU DE PERFIL (AVATAR) --- */}
               <div className={styles.userMenu}>
                 <button 
                   onClick={toggleMenu} 
                   className={styles.menuToggleButton} 
-                  aria-label="Abrir menu de usuário"
+                  aria-label="Menu do Usuário"
                 >
                   <div className={styles.avatarNavWrapper}>
                     {user?.avatarUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img 
-                        src={user.avatarUrl} 
-                        alt={`${user.username}'s avatar`} 
-                        className={styles.avatarImage} 
-                      />
+                      <img src={user.avatarUrl} alt="Avatar" className={styles.avatarImage} />
                     ) : (
                       <FaUserCircle size={24} className={styles.defaultAvatarIcon} />
                     )}
                   </div>
                 </button>
 
-                {/* Dropdown */}
                 {isMenuOpen && (
                   <div className={styles.dropdownMenu}>
-                    {/* Admin não precisa ver link pro seu perfil público de gamer necessariamente, mas pode manter se quiser. 
-                        Vou esconder para Admin para ficar bem "Dashboard". */}
                     {isUser && (
                       <Link
                         href={`/profile/${user.username}`}

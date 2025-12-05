@@ -7,7 +7,7 @@ import styles from './SettingsNav.module.css';
 const navItems = [
   { href: '/settings', label: 'Conta' },
   { href: '/settings/profile', label: 'Perfil' },
-  { href: '/settings/security', label: 'Segurança' },
+  { href: '/settings/my-games', label: 'Meus Jogos' }, // <--- MUDANÇA AQUI
 ];
 
 export default function SettingsNav() {

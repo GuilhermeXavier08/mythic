@@ -1,145 +1,325 @@
-/* src/app/game/[gameId]/page.module.css */
+/* Layout Principal */
 .page {
+  position: relative;
+  min-height: 100vh;
+  background-color: #0f0f0f;
+  color: #e0e0e0;
+  width: 100%;
+}
+
+.centerContainer {
   display: flex;
   justify-content: center;
-  padding: 2rem;
-  flex-grow: 1;
+  align-items: center;
+  height: 80vh;
+  width: 100%;
 }
 
-.grid {
+.error {
+  color: #ff4d4d;
+  font-size: 1.2rem;
+}
+
+/* Background Imersivo */
+.backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 60vh;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.gradientOverlay {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(to bottom, transparent 0%, #0f0f0f 100%);
+  z-index: 1;
+}
+
+/* Container do Conteúdo */
+.container {
+  position: relative;
+  z-index: 2;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 4rem 2rem;
+}
+
+.contentGrid {
   display: grid;
-  grid-template-columns: 1fr; /* Coluna única em telas pequenas */
-  gap: 2rem;
-  max-width: 1280px;
-  width: 100%;
+  grid-template-columns: 350px 1fr; /* Coluna fixa para a capa, resto flexível */
+  gap: 3rem;
+  align-items: start;
 }
 
-@media (min-width: 768px) {
-  .grid {
-    grid-template-columns: 2fr 3fr;
-  }
+/* --- COLUNA ESQUERDA (POSTER) --- */
+.leftColumn {
+  position: sticky;
+  top: 2rem; /* Mantém a capa visível ao rolar */
 }
 
-.imageColumn {
+.posterWrapper {
+  position: relative;
   width: 100%;
-}
-
-.image {
-  width: 100%;
-  height: auto;
+  aspect-ratio: 9 / 16; /* Formato Capa/Poster */
   border-radius: 12px;
-  background-color: #353535;
-  border: 1px solid #555555;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+  border: 1px solid #333;
 }
 
-.infoColumn {
+.posterImage {
+  object-fit: cover;
+}
+
+.metaData {
+  margin-top: 1.5rem;
+  background: #1a1a1a;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+.metaItem {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+  border-bottom: 1px solid #2a2a2a;
+  padding-bottom: 0.5rem;
+}
+
+.metaItem:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+}
+
+.metaItem span {
+  color: #888;
+}
+
+.metaItem strong {
+  color: #fff;
+}
+
+/* --- COLUNA DIREITA (DETALHES) --- */
+.rightColumn {
   display: flex;
   flex-direction: column;
 }
 
 .title {
-  font-size: 3rem;
-  font-weight: 700;
+  font-size: 3.5rem;
+  font-weight: 800;
   margin-bottom: 0.5rem;
   line-height: 1.1;
+  text-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-.developer {
-  font-size: 1.1rem;
-  color: #a7a7a7;
+/* Rating Header */
+.ratingHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   margin-bottom: 2rem;
 }
 
-.developer span {
-  font-weight: 600;
-  color: var(--secondary-color);
-}
-
-.description {
-  font-size: 1rem;
-  color: #e0e0e0;
-  line-height: 1.6;
-  flex-grow: 1;
-}
-
-.actionBox {
-  background-color: #353535;
-  border-radius: 8px;
-  padding: 1.5rem;
-  margin-top: 2rem;
-  border: 1px solid #555555;
+.starsBox {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
+}
+
+.ratingValue {
+  font-weight: bold;
+  color: #FFD700;
+  font-size: 1.1rem;
+}
+
+.totalReviews {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+/* --- CARD DE AÇÃO (PREÇO E BOTÃO) --- */
+.actionCard {
+  background-color: #1a1a1a;
+  padding: 1.5rem 2rem;
+  border-radius: 12px;
+  border: 1px solid #333;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
 .price {
-  font-size: 1.8rem;
-  font-weight: bold;
-  color: #FFFFFF;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #fff;
 }
 
-.button {
-  background-color: var(--primary-color);
-  color: white;
+.ownedLabel {
+  font-size: 1.2rem;
+  color: #4caf50; /* Verde */
   font-weight: bold;
-  padding: 0.9rem 1.5rem;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+}
+
+/* Botões */
+.btnPrimary {
+  background-color: #fff;
+  color: #000;
+  padding: 1rem 2.5rem;
   border: none;
   border-radius: 6px;
+  font-weight: 700;
+  font-size: 1rem;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
-  font-size: 1.1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.button:hover {
-  background-color: var(--secondary-color);
+.btnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
 }
 
-.button:disabled {
-  cursor: not-allowed;
-  opacity: 0.7;
+.btnPlay {
+  background-color: #7000ff; /* Roxo Mythic */
+  color: #fff;
+  text-decoration: none;
+  padding: 1rem 3rem;
+  border-radius: 6px;
+  font-weight: bold;
+  transition: background 0.2s;
+  display: inline-block;
+  text-align: center;
 }
 
-.inLibrary {
-  background-color: #555555;
-  color: #a7a7a7;
-}
-.inLibrary:hover {
-  background-color: #555555;
+.btnPlay:hover {
+  background-color: #8a2be2;
 }
 
-.errorSmall {
-  color: #fca5a5;
-  font-size: 0.9rem;
-  max-width: 150px;
-  text-align: right;
-}
-
-.error {
-  color: #fca5a5;
-  font-size: 1.2rem;
-}
-/* ... (estilos anteriores) ... */
-
-.inLibrary {
-  background-color: #555555;
-  color: #a7a7a7;
-}
-.inLibrary:hover {
-  background-color: #555555;
-}
-
-/* --- NOVO ESTILO --- */
-.inCart {
+.btnSecondary {
   background-color: transparent;
-  color: var(--primary-color);
-  border: 1px solid var(--primary-color);
+  border: 1px solid #7000ff;
+  color: #7000ff;
+  padding: 0.9rem 2rem;
+  text-decoration: none;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: all 0.2s;
 }
-.inCart:hover {
-  background-color: rgba(147, 51, 234, 0.1); /* Roxo bem claro */
+
+.btnSecondary:hover {
+  background-color: rgba(112, 0, 255, 0.1);
 }
-/* --- FIM DO NOVO ESTILO --- */
+
+.btnDisabled {
+  background-color: #333;
+  color: #777;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: not-allowed;
+}
+
+/* Descrição */
+.divider {
+  height: 1px;
+  background-color: #333;
+  margin-bottom: 2rem;
+  width: 100%;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  color: #fff;
+}
+
+.description {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #ccc;
+  margin-bottom: 3rem;
+  white-space: pre-line; /* Respeita quebras de linha */
+}
+
+/* User Review Section */
+.userReviewSection {
+  background: #151515;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px dashed #333;
+  text-align: center;
+}
+
+.userReviewSection h3 {
+  margin-bottom: 0.5rem;
+}
+
+.userRatingWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.savingText {
+  font-size: 0.8rem;
+  color: #7000ff;
+}
+
+/* Estrelas */
+.starsContainer {
+  display: flex;
+  gap: 4px;
+}
+
+.starButton {
+  background: none;
+  border: none;
+  padding: 0;
+  line-height: 1;
+  transition: transform 0.1s;
+}
+
+.starButton:active {
+  transform: scale(0.8);
+}
+
+/* Responsividade */
+@media (max-width: 900px) {
+  .contentGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .leftColumn {
+    position: relative;
+    top: 0;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .title {
+    font-size: 2.5rem;
+    text-align: center;
+  }
+
+  .ratingHeader {
+    justify-content: center;
+  }
+
+  .actionCard {
+    flex-direction: column;
+    gap: 1.5rem;
+    text-align: center;
+  }
+}

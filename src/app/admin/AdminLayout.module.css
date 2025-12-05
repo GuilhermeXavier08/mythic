@@ -1,0 +1,112 @@
+.adminContainer {
+  display: flex;
+  min-height: 100vh;
+  background-color: #121212;
+  color: #e0e0e0;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+  background-color: #1a1a1a;
+  border-right: 1px solid #333;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.3s ease;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+
+.sidebar.open { width: 260px; }
+.sidebar.closed { width: 80px; }
+
+.sidebarHeader {
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.brand {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: #7000ff;
+  white-space: nowrap;
+  overflow: hidden;
+  margin: 0;
+  display: block;
+}
+
+.sidebar.closed .brand { display: none; }
+
+.toggleBtn {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.nav {
+  padding: 1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.navItem {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #aaa;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.navItem:hover {
+  background-color: #252525;
+  color: #fff;
+}
+
+.navItem.active {
+  background-color: rgba(112, 0, 255, 0.1);
+  color: #7000ff;
+  border: 1px solid rgba(112, 0, 255, 0.2);
+}
+
+.icon { font-size: 1.2rem; }
+.label { font-weight: 500; font-size: 0.95rem; }
+
+.sidebarFooter {
+  padding: 1.5rem;
+  border-top: 1px solid #2a2a2a;
+}
+
+.backLink {
+  color: #666;
+  font-size: 0.85rem;
+  text-decoration: none;
+  display: block;
+  text-align: center;
+}
+.backLink:hover { color: #fff; }
+
+/* --- ÁREA DE CONTEÚDO --- */
+.contentArea {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+  background-color: #0f0f0f;
+}
+
+/* Utilitários Globais para Páginas Admin */
+.pageHeader {
+  margin-bottom: 2rem;
+}
+.pageTitle { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+.pageSubtitle { color: #777; font-size: 1rem; }

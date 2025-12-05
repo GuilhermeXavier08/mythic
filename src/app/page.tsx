@@ -1,118 +1,134 @@
-// src/app/page.tsx
-'use client'; 
+'use client';
 
 import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
 import { useState, useEffect } from 'react';
-import GameCard from '@/components/GameCard';
-import Link from 'next/link'; // <-- IMPORTADO
+import Link from 'next/link';
+import Image from 'next/image'; 
+import { useRouter } from 'next/navigation';
 
-// Tipo de dados do Jogo (deve corresponder ao GameCard)
 interface Game {
- id: string;
- title: string;
- price: number;
- imageUrl: string;
+  id: string;
+  title: string;
+  price: number;
+  imageUrl: string;
 }
 
 export default function Home() {
- // 1. Obter 'isAdmin' e 'isLoading' (renomeado) do hook
- const { user, isAdmin, isLoading: isAuthLoading } = useAuth();
- 
- const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
- // Renomeado 'loading' para 'isGamesLoading' para evitar conflito
- const [isGamesLoading, setIsGamesLoading] = useState(true);
+  const { user, isAdmin, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter(); 
+  
+  const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
+  const [isGamesLoading, setIsGamesLoading] = useState(true);
 
- // 2. Atualizar useEffect para SÓ buscar jogos se NÃO for admin
- useEffect(() => {
-    // Apenas busca os jogos se a autenticação terminou E o usuário NÃO é admin
-  if (!isAuthLoading && !isAdmin) {
-   const fetchGames = async () => {
-    try {
-     const response = await fetch('/api/games');
-     if (!response.ok) throw new Error('Falha ao carregar jogos');
-     const data = await response.json();
-     setFeaturedGames(data);
-    } catch (error) {
-     console.error(error);
-    } finally {
-     setIsGamesLoading(false);
+  // --- REDIRECIONAMENTO DE ADMIN ---
+  useEffect(() => {
+    if (!isAuthLoading && isAdmin) {
+      router.replace('/admin/dashboard');
     }
-   };
-   fetchGames();
-  } else {
-      // Se for admin ou se a autenticação ainda estiver carregando, paramos o loading de jogos
+  }, [isAdmin, isAuthLoading, router]);
+
+  // --- BUSCAR JOGOS (Apenas se NÃO for admin) ---
+  useEffect(() => {
+    if (!isAuthLoading && !isAdmin) {
+      const fetchGames = async () => {
+        try {
+          const response = await fetch('/api/games');
+          if (!response.ok) throw new Error('Falha ao carregar jogos');
+          const data = await response.json();
+          // Pega apenas os 8 primeiros
+          setFeaturedGames(data.slice(0, 8));
+        } catch (error) {
+          console.error(error);
+        } finally {
+          setIsGamesLoading(false);
+        }
+      };
+      fetchGames();
+    } else {
       setIsGamesLoading(false);
     }
- }, [isAdmin, isAuthLoading]); // <-- Adiciona dependências
+  }, [isAdmin, isAuthLoading]);
 
-  // 3. Mostrar um loading geral enquanto o AuthContext verifica o usuário
+  // Loading Screen
   if (isAuthLoading) {
     return (
-      <main className={styles.main}>
-        <p className={styles.loading}>Carregando...</p>
+      <main className={styles.loadingContainer}>
+        <div className={styles.spinner}></div>
+        <p>Carregando Mythic...</p>
       </main>
     );
   }
 
-  // 4. Se for Admin, renderiza a "Home de Admin" (sem os elementos da loja)
+  // Se for Admin, retorna null para não piscar a tela antes do redirect
   if (isAdmin) {
-    return (
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Painel de Administração
-        </h1>
-        <p className={styles.loading}>
-          Bem-vindo, <span className={styles.username}>{user?.username || 'Admin'}</span>.
-        </p>
-        <p className={styles.loading}>
-          Acesse o <Link href="/admin/dashboard" className={styles.adminLink}>Dashboard</Link> para gerenciar a loja.
-        </p>
-        {/* O retorno para aqui. Nenhum dos outros <section> será renderizado */}
-      </main>
-    );
+    return null; 
   }
 
- // 5. Se NÃO for Admin (usuário comum ou deslogado), renderiza a home padrão
- return (
-  <main className={styles.main}>
-   <h1 className={styles.title}>
-    Bem-vindo de volta, <span className={styles.username}>{user?.username || 'jogador'}</span>
-   </h1>
-   
-   {/* Seção de Destaques (Atualizada) */}
-   <section className={styles.section}>
-    <h2 className={styles.sectionTitle}>Jogos em Destaque</h2>
-    {isGamesLoading ? (
-     <p className={styles.loading}>Carregando destaques...</p>
-    ) : (
-     <div className={styles.grid}>
-      {featuredGames.length > 0 ? (
-       featuredGames.map((game) => (
-        <GameCard key={game.id} game={game} />
-       ))
-      ) : (
-       <p className={styles.loading}>Nenhum jogo em destaque no momento.</p>
-      )}
-     </div>
-    )}
-   </section>
+  // --- HOME PADRÃO (Usuário Comum) ---
+  return (
+    <main className={styles.main}>
+      
+      {/* HERO SECTION */}
+      <section className={styles.hero}>
+        <div className={styles.heroContent}>
+          <span className={styles.heroTag}>Destaque da Semana</span>
+          <h1 className={styles.heroTitle}>Explore Novos Mundos</h1>
+          <p className={styles.heroSubtitle}>Descubra as melhores ofertas e lançamentos exclusivos da Mythic.</p>
+          <button className={styles.ctaButton}>Ver Ofertas</button>
+        </div>
+        <div className={styles.heroOverlay}></div>
+      </section>
 
-   {/* Seção de Jogos Recentes (Placeholder) */}
-   <section className={styles.section}>
-    <h2 className={styles.sectionTitle}>Jogados Recentemente</h2>
-    <div className={styles.grid}>
-     <div className={styles.placeholderCard}>Em breve</div>
-    </div>
-   </section>
+      {/* GRID DE JOGOS */}
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2 className={styles.sectionTitle}>Jogos em Destaque</h2>
+          <Link href="/store" className={styles.viewAll}>Ver todos</Link>
+        </div>
 
-   {/* Seção de Amigos (Placeholder) */}
-   <section className={styles.section}>
-    <h2 className={styles.sectionTitle}>Amigos Online</h2>
-    <div className={styles.placeholderList}>
-     <div className={styles.placeholderFriend}>Em breve</div>
-    </div>
-   </section>
-  </main>
- );
+        {isGamesLoading ? (
+          <div className={styles.gridLoading}>
+            {[1,2,3,4].map(i => <div key={i} className={styles.skeletonCard} />)}
+          </div>
+        ) : (
+          <div className={styles.grid}>
+            {featuredGames.length > 0 ? (
+              featuredGames.map((game) => (
+                /* CONSTRUÇÃO MANUAL DO CARD (Sem component GameCard para evitar bugs visuais) */
+                <Link 
+                  key={game.id} 
+                  href={`/game/${game.id}`} 
+                  className={styles.cardWrapper}
+                >
+                  {/* Imagem */}
+                  <Image 
+                    src={game.imageUrl} 
+                    alt={game.title}
+                    fill
+                    sizes="(max-width: 768px) 50vw, 20vw"
+                    className={styles.cardImage} // Precisa estar no CSS (veja abaixo)
+                  />
+
+                  {/* Overlay */}
+                  <div className={styles.cardOverlay}>
+                    <span className={styles.cardTitle}>{game.title}</span>
+                    <span className={styles.cardPrice}>
+                      {game.price === 0 ? 'Grátis' : `R$ ${game.price.toFixed(2)}`}
+                    </span>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className={styles.emptyState}>Nenhum jogo encontrado.</p>
+            )}
+          </div>
+        )}
+      </section>
+
+      <footer className={styles.footer}>
+        <p>&copy; 2024 Mythic Store. Todos os direitos reservados.</p>
+      </footer>
+    </main>
+  );
 }

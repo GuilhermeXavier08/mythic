@@ -1,6 +1,6 @@
 // src/app/api/auth/login/route.ts
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma'; // Importe da lib
+import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 
@@ -25,19 +25,19 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Credenciais inválidas' }, { status: 401 });
     }
 
-    // --- MUDANÇA AQUI ---
-    // Adicionamos 'role: user.role' ao token
+    // --- CRIAÇÃO DO TOKEN ---
     const token = jwt.sign(
       { 
         userId: user.id, 
         email: user.email, 
         username: user.username,
-        role: user.role // <-- ADICIONADO
+        role: user.role
       },
       JWT_SECRET,
-      { expiresIn: '1h' }
+      // MUDANÇA AQUI: De '1h' para '365d' (1 ano de duração)
+      { expiresIn: '365d' } 
     );
-    // --- FIM DA MUDANÇA ---
+    // ------------------------
 
     return NextResponse.json({ message: 'Login bem-sucedido!', token }, { status: 200 });
 

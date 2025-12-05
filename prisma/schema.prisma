@@ -54,6 +54,7 @@ model User {
   // Game related relations
   purchases         Purchase[]
   submittedGames    Game[]
+  reviews Review[]
   cart              Cart? // O User tem um Cart
 
   // Friend related relations
@@ -67,22 +68,62 @@ model User {
   receivedMessages  Message[]           @relation("ReceivedMessages")
 }
 
+// Adicione isso no enum de Role ou logo abaixo dele
+enum GameGenre {
+  ACAO
+  AVENTURA
+  RPG
+  ESTRATEGIA
+  SIMULACAO
+  ESPORTES
+  CORRIDA
+  PUZZLE
+  TERROR
+  OUTRO
+}
+
 model Game {
   id          String     @id @default(cuid())
   title       String
-  description String
+  
+  // --- MUDE ESTA LINHA ---
+  description String     @db.Text 
+  // -----------------------
+  
   price       Float
-  imageUrl    String
+  imageUrl    String   @db.LongText
   gameUrl     String     @default("")
+  
+  genre       GameGenre  @default(OUTRO)
+  createdAt   DateTime   @default(now())
+  
   status      GameStatus @default(PENDING)
 
   developerId String
   developer   User       @relation(fields: [developerId], references: [id])
 
   purchases Purchase[]
-  cartItems CartItem[] // O Game está em vários CartItems
+  cartItems CartItem[]
+  reviews   Review[]     // Se já adicionou reviews
 
   @@unique([developerId, title])
+}
+
+// Adicione o modelo Review
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int      // 1 a 5
+  comment   String?  @db.Text // Preparado para comentários futuros
+  createdAt DateTime @default(now())
+
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id])
+
+  // Garante que o usuário só possa avaliar o mesmo jogo uma vez
+  @@unique([userId, gameId])
 }
 
 model Purchase {

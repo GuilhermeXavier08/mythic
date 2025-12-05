@@ -28,7 +28,7 @@ export default function Home() {
     }
   }, [isAdmin, isAuthLoading, router]);
 
-  // --- BUSCAR JOGOS (Apenas se NÃO for admin) ---
+  // --- BUSCAR JOGOS ---
   useEffect(() => {
     if (!isAuthLoading && !isAdmin) {
       const fetchGames = async () => {
@@ -50,7 +50,6 @@ export default function Home() {
     }
   }, [isAdmin, isAuthLoading]);
 
-  // Loading Screen
   if (isAuthLoading) {
     return (
       <main className={styles.loadingContainer}>
@@ -60,12 +59,10 @@ export default function Home() {
     );
   }
 
-  // Se for Admin, retorna null para não piscar a tela antes do redirect
   if (isAdmin) {
     return null; 
   }
 
-  // --- HOME PADRÃO (Usuário Comum) ---
   return (
     <main className={styles.main}>
       
@@ -95,22 +92,19 @@ export default function Home() {
           <div className={styles.grid}>
             {featuredGames.length > 0 ? (
               featuredGames.map((game) => (
-                /* CONSTRUÇÃO MANUAL DO CARD (Sem component GameCard para evitar bugs visuais) */
                 <Link 
                   key={game.id} 
                   href={`/game/${game.id}`} 
                   className={styles.cardWrapper}
                 >
-                  {/* Imagem */}
                   <Image 
                     src={game.imageUrl} 
                     alt={game.title}
                     fill
                     sizes="(max-width: 768px) 50vw, 20vw"
-                    className={styles.cardImage} // Precisa estar no CSS (veja abaixo)
+                    className={styles.cardImage}
                   />
 
-                  {/* Overlay */}
                   <div className={styles.cardOverlay}>
                     <span className={styles.cardTitle}>{game.title}</span>
                     <span className={styles.cardPrice}>

@@ -63,7 +63,7 @@ function StoreContent() {
   const filteredGames = useMemo(() => {
     return games.filter((game) => {
       const matchesName = game.title.toLowerCase().includes(searchTerm.toLowerCase());
-      
+
       const price = game.price;
       const min = minPrice !== '' ? parseFloat(minPrice) : 0;
       const max = maxPrice !== '' ? parseFloat(maxPrice) : Infinity;
@@ -77,8 +77,8 @@ function StoreContent() {
   }, [games, searchTerm, minPrice, maxPrice, minRating, selectedGenres]);
 
   const toggleGenre = (genreValue: string) => {
-    setSelectedGenres((prev) => 
-      prev.includes(genreValue) 
+    setSelectedGenres((prev) =>
+      prev.includes(genreValue)
         ? prev.filter((g) => g !== genreValue)
         : [...prev, genreValue]
     );
@@ -87,22 +87,22 @@ function StoreContent() {
   return (
     <main className={styles.page}>
       <div className={styles.pageHeader}>
-         <h1 className={styles.title}>Explorar Loja</h1>
-         <p className={styles.subtitle}>{filteredGames.length} jogos encontrados</p>
+        <h1 className={styles.title}>Explorar Loja</h1>
+        <p className={styles.subtitle}>{filteredGames.length} jogos encontrados</p>
       </div>
 
       <div className={styles.storeLayout}>
-        
+
         {/* SIDEBAR DE FILTROS */}
         <aside className={styles.filtersColumn}>
           <div className={styles.filtersHeader}>
             <h3>Filtros</h3>
-            <button 
-                className={styles.clearButton}
-                onClick={() => {
-                  setSearchTerm(''); setMinPrice(''); setMaxPrice('');
-                  setMinRating(0); setSelectedGenres([]);
-                }}
+            <button
+              className={styles.clearButton}
+              onClick={() => {
+                setSearchTerm(''); setMinPrice(''); setMaxPrice('');
+                setMinRating(0); setSelectedGenres([]);
+              }}
             >
               Limpar
             </button>
@@ -111,7 +111,7 @@ function StoreContent() {
           <div className={styles.scrollableFilters}>
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Buscar</label>
-              <input 
+              <input
                 type="text" placeholder="Nome do jogo..." className={styles.input}
                 value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -120,12 +120,12 @@ function StoreContent() {
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Preço</label>
               <div className={styles.priceInputs}>
-                <input 
+                <input
                   type="number" placeholder="Min" className={styles.input}
                   value={minPrice} onChange={(e) => setMinPrice(e.target.value)} min="0"
                 />
                 <span className={styles.separator}>-</span>
-                <input 
+                <input
                   type="number" placeholder="Max" className={styles.input}
                   value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} min="0"
                 />
@@ -148,8 +148,8 @@ function StoreContent() {
               <div className={styles.checkboxGroup}>
                 {GENRES.map((g) => (
                   <label key={g.value} className={styles.checkboxLabel}>
-                    <input 
-                      type="checkbox" 
+                    <input
+                      type="checkbox"
                       checked={selectedGenres.includes(g.value)}
                       onChange={() => toggleGenre(g.value)}
                     />
@@ -173,39 +173,41 @@ function StoreContent() {
                 filteredGames.map((game) => (
                   /* --- MUDANÇA AQUI: CONSTRUÇÃO MANUAL DO CARD --- */
                   /* Isso elimina o conflito de CSS e o piscar */
-                  <Link 
-                    key={game.id} 
-                    href={`/game/${game.id}`} 
+                  <Link
+                    key={game.id}
+                    href={`/game/${game.id}`}
                     className={styles.cardWrapper}
                   >
                     {/* Imagem de Fundo */}
-                    <Image 
-                      src={game.imageUrl} 
+                    <Image
+                      src={game.imageUrl}
                       alt={game.title}
                       fill
                       sizes="(max-width: 768px) 50vw, 20vw"
                       className={styles.cardImage}
                     />
-                    
+
                     {/* Overlay de Informação */}
                     <div className={styles.cardOverlay}>
-                        <span className={styles.cardTitle}>{game.title}</span>
-                        <span className={styles.cardPrice}>
-                            {game.price === 0 ? 'Grátis' : `R$ ${game.price.toFixed(2)}`}
-                        </span>
+                      <span className={styles.cardTitle}>{game.title}</span>
+                      <span className={styles.cardPrice}>
+                        {game.price === 0 ? 'Grátis' : `R$ ${game.price.toFixed(2)}`}
+                      </span>
                     </div>
                   </Link>
                 ))
               ) : (
                 <div className={styles.noResults}>
-                   <p>Nenhum jogo encontrado.</p>
+                  <p>Nenhum jogo encontrado.</p>
                 </div>
               )}
             </div>
           )}
         </section>
-
       </div>
+      <footer className={styles.footer}>
+        <p>&copy; 2024 Mythic Store. Todos os direitos reservados.</p>
+      </footer>
     </main>
   );
 }

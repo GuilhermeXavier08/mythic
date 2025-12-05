@@ -1,10 +1,13 @@
-/* Layout Base */
+/* src/app/library/page.module.css */
+
+/* Layout Base - Igual à Home/Store */
 .page {
-  width: 100%;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
   background-color: #0f0f0f;
   color: #e0e0e0;
-  padding: 2rem;
+  width: 100%;
 }
 
 .loadingContainer {
@@ -16,10 +19,11 @@
 
 /* Header */
 .header {
+  width: 100%;
   max-width: 1440px;
-  margin: 0 auto 2rem auto;
+  margin: 0 auto;
   border-bottom: 1px solid #1f1f1f;
-  padding-bottom: 1rem;
+  padding: 2rem 3rem 1rem 3rem; /* Alinhado com o padding da Home */
 }
 
 .title {
@@ -39,8 +43,11 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1.5rem;
+  width: 100%;
   max-width: 1440px;
   margin: 0 auto;
+  padding: 2rem 3rem; /* Padding lateral para alinhar com o header */
+  flex: 1; /* Faz a grid ocupar o espaço para empurrar o footer */
 }
 
 /* --- CARD STYLE (Igual Loja) --- */
@@ -55,8 +62,6 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.3);
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s;
   border: 1px solid transparent;
-  
-  /* Performance Fixes */
   transform: translateZ(0);
 }
 
@@ -76,7 +81,7 @@
 
 .cardWrapper:hover .cardImage {
   transform: scale(1.05);
-  filter: brightness(0.7); /* Escurece levemente para destacar o texto */
+  filter: brightness(0.7);
 }
 
 /* Overlay (Info) */
@@ -107,7 +112,7 @@
 
 .statusBadge {
   font-size: 0.75rem;
-  color: #4caf50; /* Verde "Pronto" */
+  color: #4caf50;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -154,9 +159,22 @@
   padding: 2rem;
 }
 
+.footer {
+  margin-top: auto;
+  width: 100%;
+  padding: 1.6rem 3rem 0.01rem 3rem; 
+  background-color: #0a0a0a;
+  border-top: 1px solid #1a1a1a;
+  text-align: center;
+  color: #444;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 768px) {
   .grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 1rem;
+    padding: 1rem;
   }
+  .header { padding: 1rem; }
 }

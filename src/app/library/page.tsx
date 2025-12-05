@@ -77,7 +77,7 @@ function LibraryContent() {
         {purchasedGames.map((purchase) => (
           <Link 
             key={purchase.id} 
-            href={`/game/${purchase.game.id}`} /* <--- Redireciona para Detalhes */
+            href={`/game/${purchase.game.id}`}
             className={styles.cardWrapper}
           >
             {/* Imagem do Jogo */}
@@ -97,6 +97,11 @@ function LibraryContent() {
           </Link>
         ))}
       </div>
+
+      {/* --- FOOTER ADICIONADO AQUI --- */}
+      <footer className={styles.footer}>
+        <p>&copy; 2024 Mythic Store. Todos os direitos reservados.</p>
+      </footer>
     </main>
   );
 }

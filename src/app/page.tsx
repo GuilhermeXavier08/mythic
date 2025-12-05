@@ -60,6 +60,9 @@ export default function Home() {
     );
   }
 
+  if (isAdmin) {
+    return null; 
+  }
   if (isAdmin) return null; 
 
   return (
@@ -125,6 +128,9 @@ export default function Home() {
                     alt={game.title}
                     fill
                     sizes="(max-width: 768px) 50vw, 20vw"
+                    className={styles.cardImage}
+                  />
+
                     className={styles.cardImage} 
                   />
                   <div className={styles.cardOverlay}>

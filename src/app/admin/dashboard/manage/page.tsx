@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import styles from './manage.module.css';
 import { useAuth } from '@/context/AuthContext';
-// Você pode criar um manage.module.css se quiser estilos específicos
 
 interface Game {
   id: string;
@@ -18,12 +18,11 @@ export default function ManageGamesPage() {
   const [loading, setLoading] = useState(true);
   const { token } = useAuth();
 
-  // 1. Buscar TODOS os jogos (aprovados)
+  // 1. Buscar TODOS os jogos
   useEffect(() => {
     const fetchAllGames = async () => {
       setLoading(true);
       try {
-        // Crie uma rota API que retorne todos os jogos para o admin, ou use a rota publica de jogos
         const res = await fetch('/api/games'); 
         if (res.ok) {
           const data = await res.json();
@@ -40,7 +39,9 @@ export default function ManageGamesPage() {
 
   // 2. Função de Deletar
   const handleDelete = async (gameId: string) => {
-    if (!confirm('Tem certeza que deseja remover este jogo da loja? Essa ação não pode ser desfeita.')) return;
+    const confirmed = window.confirm('⚠️ ATENÇÃO:\n\nTem certeza que deseja remover este jogo da loja?\nIsso removerá o jogo da biblioteca de quem comprou.\n\nEssa ação não pode ser desfeita.');
+    
+    if (!confirmed) return;
 
     try {
       const res = await fetch(`/api/admin/games/${gameId}`, {
@@ -50,7 +51,7 @@ export default function ManageGamesPage() {
 
       if (res.ok) {
         setGames(games.filter(g => g.id !== gameId));
-        alert('Jogo removido com sucesso.');
+        // Opcional: Mostrar um toast/notificação de sucesso
       } else {
         alert('Erro ao remover jogo.');
       }
@@ -64,34 +65,61 @@ export default function ManageGamesPage() {
 
   return (
     <div>
-      <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-            <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Gerenciar Loja</h1>
-            <p style={{ color: '#777' }}>Remova jogos ou edite status.</p>
+      {/* Cabeçalho */}
+      <div className={styles.header}>
+        <div className={styles.titleBlock}>
+            <h1>Gerenciar Loja</h1>
+            <p>Remova jogos ativos ou verifique o catálogo.</p>
         </div>
-        <input 
-            type="text" 
-            placeholder="Buscar jogo..." 
-            style={{ padding: '10px', borderRadius: '6px', border: '1px solid #333', background: '#1a1a1a', color: '#fff' }}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        
+        <div className={styles.searchWrapper}>
+          <input 
+              type="text" 
+              placeholder="Buscar por nome..." 
+              className={styles.searchInput}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' }}>
+      {/* Estados de Loading/Vazio */}
+      {loading && <p className={styles.loadingText}>Carregando catálogo...</p>}
+      
+      {!loading && filteredGames.length === 0 && (
+        <div className={styles.emptyState}>
+          Nenhum jogo encontrado com esse nome.
+        </div>
+      )}
+
+      {/* Grid de Cards */}
+      <div className={styles.grid}>
         {filteredGames.map(game => (
-            <div key={game.id} style={{ background: '#1a1a1a', borderRadius: '8px', overflow: 'hidden', border: '1px solid #333' }}>
-                <div style={{ height: '120px', background: '#000' }}>
-                    <img src={game.imageUrl} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div key={game.id} className={styles.card}>
+                
+                {/* Imagem */}
+                <div className={styles.imageContainer}>
+                    <Image 
+                      src={game.imageUrl} 
+                      alt={game.title} 
+                      fill 
+                      className={styles.cardImage}
+                      sizes="(max-width: 768px) 100vw, 300px"
+                    />
                 </div>
-                <div style={{ padding: '1rem' }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 'bold', marginBottom: '0.5rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{game.title}</h3>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '1rem' }}>
+                
+                {/* Conteúdo */}
+                <div className={styles.cardContent}>
+                    <h3 className={styles.cardTitle} title={game.title}>{game.title}</h3>
+                    <span className={styles.cardId}>ID: {game.id.slice(0, 8)}...</span>
+                    
+                    <div className={styles.actions}>
                         <button 
                             onClick={() => handleDelete(game.id)}
-                            style={{ flex: 1, padding: '8px', background: '#ef4444', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 'bold' }}
+                            className={styles.btnDelete}
+                            title="Remover jogo permanentemente"
                         >
-                            Remover
+                            Remover Jogo
                         </button>
                     </div>
                 </div>

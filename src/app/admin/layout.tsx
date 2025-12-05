@@ -15,9 +15,9 @@ export default function AdminLayout({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   const menuItems = [
-    { label: 'Visão Geral', href: '/admin/dashboard', icon: '📊' },
-    { label: 'Aprovar Jogos', href: '/admin/dashboard/approvals', icon: '✅' }, // Vamos separar approvals
-    { label: 'Gerenciar Loja', href: '/admin/dashboard/manage', icon: '🗑️' }, // Nova tela de deletar
+    { label: 'Visão Geral', href: '/admin/dashboard' },
+    { label: 'Aprovar Jogos', href: '/admin/dashboard/approvals' }, // Vamos separar approvals
+    { label: 'Gerenciar Loja', href: '/admin/dashboard/manage' }, // Nova tela de deletar
   ];
 
   return (
@@ -42,7 +42,6 @@ export default function AdminLayout({
                   href={item.href}
                   className={`${styles.navItem} ${isActive ? styles.active : ''}`}
                 >
-                  <span className={styles.icon}>{item.icon}</span>
                   {isSidebarOpen && <span className={styles.label}>{item.label}</span>}
                 </Link>
               );

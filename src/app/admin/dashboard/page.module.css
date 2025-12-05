@@ -1,58 +1,190 @@
-/* src/app/admin/dashboard/overview.module.css */
+/* Layout Principal */
+.page {
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1rem;
+}
 
+/* Header */
 .header {
-  margin-bottom: 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 3rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #2a2a2a;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .title {
-  font-size: 2rem;
+  font-size: 2.5rem;
   font-weight: 800;
   color: #fff;
   margin-bottom: 0.5rem;
+  letter-spacing: -1px;
 }
 
 .subtitle {
-  color: #777;
-  font-size: 1rem;
+  color: #888;
+  font-size: 1.1rem;
 }
 
+.highlight {
+  color: #7000ff;
+  font-weight: 600;
+}
+
+.dateBadge {
+  background-color: #1a1a1a;
+  color: #ccc;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #333;
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+/* --- KPI GRID (Cards de Estatísticas) --- */
 .kpiGrid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.5rem;
+  margin-bottom: 4rem;
 }
 
 .kpiCard {
-  background: #1a1a1a;
+  background: #151515; /* Um pouco mais claro que o fundo preto */
   padding: 1.5rem;
-  border-radius: 12px;
-  border: 1px solid #333;
+  border-radius: 16px;
+  border: 1px solid #2a2a2a;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, border-color 0.2s;
+  transition: transform 0.2s ease, border-color 0.2s;
+  position: relative;
+  overflow: hidden;
 }
 
 .kpiCard:hover {
-  transform: translateY(-2px);
-  border-color: #555;
+  transform: translateY(-4px);
+  border-color: #444;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+/* Destaque para o card de pendentes se houver pendências */
+.alertCard {
+  border-color: rgba(112, 0, 255, 0.4);
+  background: linear-gradient(145deg, #151515 0%, #1a1025 100%);
+}
+
+.kpiHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1rem;
+}
+
+.icon {
+  font-size: 1.2rem;
+  background: #252525;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
 }
 
 .kpiLabel {
   color: #888;
-  font-size: 0.9rem;
-  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  font-weight: 600;
 }
 
 .kpiValue {
   font-size: 2.2rem;
   font-weight: 800;
   color: #fff;
+  margin-bottom: 0.5rem;
 }
 
-/* Cores específicas para os números */
-.green { color: #22c55e; }
-.purple { color: #7000ff; }
-.white { color: #fff; }
+.trend {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.trend.up {
+  color: #22c55e; /* Verde */
+}
+
+.actionLink {
+  color: #7000ff;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.actionLink:hover {
+  text-decoration: underline;
+}
+
+/* --- SEÇÃO DE AÇÕES RÁPIDAS --- */
+.actionsSection {
+  margin-top: 2rem;
+}
+
+.sectionTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 1.5rem;
+}
+
+.actionsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.actionCard {
+  background-color: #1a1a1a;
+  border: 1px solid #333;
+  padding: 1.5rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  text-decoration: none;
+  transition: all 0.2s;
+}
+
+.actionCard:hover {
+  background-color: #202020;
+  border-color: #7000ff;
+}
+
+.actionIcon {
+  font-size: 2rem;
+  background: #111;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.actionInfo h3 {
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.actionInfo p {
+  color: #888;
+  font-size: 0.9rem;
+}

@@ -3,8 +3,9 @@
 import { useAuth } from '@/context/AuthContext';
 import styles from './page.module.css';
 import { useState, useEffect } from 'react';
-import Link from 'next/link'; 
-import Image from 'next/image'; // <--- IMPORTANTE: Importar Image
+import Link from 'next/link';
+import Image from 'next/image'; 
+import { useRouter } from 'next/navigation';
 
 interface Game {
   id: string;
@@ -15,9 +16,19 @@ interface Game {
 
 export default function Home() {
   const { user, isAdmin, isLoading: isAuthLoading } = useAuth();
+  const router = useRouter(); 
+  
   const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
   const [isGamesLoading, setIsGamesLoading] = useState(true);
 
+  // --- REDIRECIONAMENTO DE ADMIN ---
+  useEffect(() => {
+    if (!isAuthLoading && isAdmin) {
+      router.replace('/admin/dashboard');
+    }
+  }, [isAdmin, isAuthLoading, router]);
+
+  // --- BUSCAR JOGOS (Apenas se NÃO for admin) ---
   useEffect(() => {
     if (!isAuthLoading && !isAdmin) {
       const fetchGames = async () => {
@@ -25,7 +36,7 @@ export default function Home() {
           const response = await fetch('/api/games');
           if (!response.ok) throw new Error('Falha ao carregar jogos');
           const data = await response.json();
-          // Pega apenas os 8 primeiros para a home
+          // Pega apenas os 8 primeiros
           setFeaturedGames(data.slice(0, 8));
         } catch (error) {
           console.error(error);
@@ -49,22 +60,12 @@ export default function Home() {
     );
   }
 
-  // Admin View
+  // Se for Admin, retorna null para não piscar a tela antes do redirect
   if (isAdmin) {
-    return (
-      <main className={styles.main}>
-        <div className={styles.adminHeader}>
-          <h1 className={styles.title}>Painel Admin</h1>
-          <p>Bem-vindo, {user?.username || 'Admin'}.</p>
-        </div>
-        <div className={styles.adminContent}>
-           <Link href="/admin/dashboard" className={styles.ctaButton}>Ir para Dashboard</Link>
-        </div>
-      </main>
-    );
+    return null; 
   }
 
-  // User View
+  // --- HOME PADRÃO (Usuário Comum) ---
   return (
     <main className={styles.main}>
       
@@ -94,28 +95,28 @@ export default function Home() {
           <div className={styles.grid}>
             {featuredGames.length > 0 ? (
               featuredGames.map((game) => (
+                /* CONSTRUÇÃO MANUAL DO CARD (Sem component GameCard para evitar bugs visuais) */
                 <Link 
                   key={game.id} 
                   href={`/game/${game.id}`} 
                   className={styles.cardWrapper}
                 >
-                  {/* 1. A IMAGEM DE FUNDO */}
+                  {/* Imagem */}
                   <Image 
                     src={game.imageUrl} 
                     alt={game.title}
                     fill
                     sizes="(max-width: 768px) 50vw, 20vw"
-                    className={styles.cardImage}
+                    className={styles.cardImage} // Precisa estar no CSS (veja abaixo)
                   />
 
-                  {/* 2. O OVERLAY COM NOME E PREÇO (IGUAL À LOJA) */}
+                  {/* Overlay */}
                   <div className={styles.cardOverlay}>
                     <span className={styles.cardTitle}>{game.title}</span>
                     <span className={styles.cardPrice}>
                       {game.price === 0 ? 'Grátis' : `R$ ${game.price.toFixed(2)}`}
                     </span>
                   </div>
-
                 </Link>
               ))
             ) : (
@@ -125,7 +126,6 @@ export default function Home() {
         )}
       </section>
 
-      {/* FOOTER */}
       <footer className={styles.footer}>
         <p>&copy; 2024 Mythic Store. Todos os direitos reservados.</p>
       </footer>

@@ -71,7 +71,7 @@
   line-height: 1.5;
   margin-bottom: 1.5rem;
   display: -webkit-box;
-  -webkit-line-clamp: 3; /* Limita a 3 linhas */
+  -webkit-line-clamp: 3; 
   -webkit-box-orient: vertical;
   overflow: hidden;
 }

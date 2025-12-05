@@ -60,6 +60,7 @@ export default function ApprovalsPage() {
     <div>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '2rem', fontWeight: 'bold' }}>Aprovação de Jogos</h1>
+        <br />
         <p style={{ color: '#777' }}>Revise os jogos enviados pela comunidade.</p>
       </div>
 

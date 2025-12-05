@@ -162,7 +162,7 @@ function SubmitGameContent() {
 
           {/* Imagem */}
           <div className={styles.formGroup}>
-            <label htmlFor="imageUrl" className={styles.label}>URL da Imagem da Capa (3:4)</label>
+            <label htmlFor="imageUrl" className={styles.label}>URL da Imagem da Capa (9:16)</label>
             <input
               type="url"
               id="imageUrl"

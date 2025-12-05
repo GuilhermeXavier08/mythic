@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react'; // Adicione Suspense
+import { useSearchParams } from 'next/navigation'; // Adicione useSearchParams
 import Link from 'next/link';
-import Image from 'next/image'; // <--- IMPORTANTE: Adicione isso
+import Image from 'next/image';
 import styles from './page.module.css';
 import NonAdminGuard from '@/components/NonAdminGuard';
 
-// Lista de gêneros
 const GENRES = [
   { value: 'ACAO', label: 'Ação' },
   { value: 'AVENTURA', label: 'Aventura' },
@@ -31,18 +31,29 @@ interface Game {
 }
 
 function StoreContent() {
+  const searchParams = useSearchParams(); // <-- HOOK PARA LER URL
+  
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // --- ESTADOS DOS FILTROS ---
+  // Estados dos filtros
   const [searchTerm, setSearchTerm] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minRating, setMinRating] = useState(0);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
-  // Busca inicial
+  // --- EFEITO PARA LER O GÊNERO DA URL ---
+  useEffect(() => {
+    const genreParam = searchParams.get('genre');
+    if (genreParam) {
+      // Se tiver ?genre=ACAO na url, já seleciona ele
+      setSelectedGenres([genreParam]);
+    }
+  }, [searchParams]);
+
+  // Busca inicial dos jogos
   useEffect(() => {
     const fetchGames = async () => {
       try {
@@ -59,7 +70,7 @@ function StoreContent() {
     fetchGames();
   }, []);
 
-  // --- LÓGICA DE FILTRAGEM ---
+  // Lógica de Filtragem (Mantida igual)
   const filteredGames = useMemo(() => {
     return games.filter((game) => {
       const matchesName = game.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -89,6 +100,8 @@ function StoreContent() {
       <div className={styles.pageHeader}>
         <h1 className={styles.title}>Explorar Loja</h1>
         <p className={styles.subtitle}>{filteredGames.length} jogos encontrados</p>
+          <h1 className={styles.title}>Explorar Loja</h1>
+          <p className={styles.subtitle}>{filteredGames.length} jogos encontrados</p>
       </div>
 
       <div className={styles.storeLayout}>
@@ -103,12 +116,21 @@ function StoreContent() {
                 setSearchTerm(''); setMinPrice(''); setMaxPrice('');
                 setMinRating(0); setSelectedGenres([]);
               }}
+            <button 
+                className={styles.clearButton}
+                onClick={() => {
+                  setSearchTerm(''); setMinPrice(''); setMaxPrice('');
+                  setMinRating(0); setSelectedGenres([]);
+                  // Opcional: Limpar URL
+                  window.history.pushState(null, '', '/store');
+                }}
             >
               Limpar
             </button>
           </div>
 
           <div className={styles.scrollableFilters}>
+            {/* Buscar */}
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Buscar</label>
               <input
@@ -117,6 +139,7 @@ function StoreContent() {
               />
             </div>
 
+            {/* Preço */}
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Preço</label>
               <div className={styles.priceInputs}>
@@ -132,6 +155,7 @@ function StoreContent() {
               </div>
             </div>
 
+            {/* Avaliação */}
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Avaliação</label>
               <select className={styles.select} value={minRating} onChange={(e) => setMinRating(Number(e.target.value))}>
@@ -143,6 +167,7 @@ function StoreContent() {
               </select>
             </div>
 
+            {/* Gêneros */}
             <div className={styles.filterGroup}>
               <label className={styles.filterLabel}>Gêneros</label>
               <div className={styles.checkboxGroup}>
@@ -181,6 +206,13 @@ function StoreContent() {
                     {/* Imagem de Fundo */}
                     <Image
                       src={game.imageUrl}
+                  <Link 
+                    key={game.id} 
+                    href={`/game/${game.id}`} 
+                    className={styles.cardWrapper}
+                  >
+                    <Image 
+                      src={game.imageUrl} 
                       alt={game.title}
                       fill
                       sizes="(max-width: 768px) 50vw, 20vw"
@@ -188,6 +220,7 @@ function StoreContent() {
                     />
 
                     {/* Overlay de Informação */}
+                    
                     <div className={styles.cardOverlay}>
                       <span className={styles.cardTitle}>{game.title}</span>
                       <span className={styles.cardPrice}>
@@ -212,10 +245,13 @@ function StoreContent() {
   );
 }
 
+// 3. EXPORTAR COM SUSPENSE (Importante para evitar erros de build com useSearchParams)
 export default function StorePage() {
   return (
     <NonAdminGuard>
-      <StoreContent />
+      <Suspense fallback={<div className={styles.loadingContainer}><p>Carregando loja...</p></div>}>
+        <StoreContent />
+      </Suspense>
     </NonAdminGuard>
   );
 }

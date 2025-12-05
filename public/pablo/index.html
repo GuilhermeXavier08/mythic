@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Metroidvania Canvas JS - Boss Update</title>
+    <style>
+        body {
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #eee;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+        canvas {
+            background-color: #0d0d0d;
+            border: 2px solid #444;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            image-rendering: pixelated;
+        }
+        #ui-layer {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            pointer-events: none;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .stat-box {
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #555;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .instructions {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #888;
+            text-align: center;
+        }
+        
+        .bar-container { width: 150px; height: 10px; background: #333; border: 1px solid #fff; position: relative; }
+        .bar-fill { height: 100%; transition: width 0.2s; }
+        #hp-bar { background-color: #ff4444; width: 100%; }
+        #soul-bar { background-color: #f1c40f; width: 0%; }
+        
+        #boss-hp-container { 
+            position: absolute; 
+            top: 550px; 
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 600px; 
+            display: none; 
+            text-align: center;
+            transition: opacity 0.5s;
+        }
+        #boss-hp-bar { background-color: #8e44ad; width: 100%; height: 15px; border: 2px solid white; transition: width 0.2s, background-color 0.5s; }
+    </style>
+</head>
+<body>
+
+    <div id="ui-layer">
+        <div class="stat-box">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>Vida:</span>
+                <div class="bar-container"><div id="hp-bar" class="bar-fill"></div></div>
+            </div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                <span>Alma:</span>
+                <div class="bar-container"><div id="soul-bar" class="bar-fill"></div></div>
+            </div>
+            <div style="margin-top:5px; font-size: 0.9em;">Sala: <span id="room-display">Caverna Inicial</span></div>
+        </div>
+        <div class="stat-box">
+            <div>Habilidade: <span id="skill-display" style="color: #888">Nenhuma</span></div>
+        </div>
+    </div>
+
+    <div id="boss-hp-container">
+        <span id="boss-name" style="font-size: 1.2em; text-shadow: 1px 1px 0 #000;">O GUARDIÃO DE SOMBRAS</span>
+        <div id="boss-hp-bar" class="bar-fill"></div>
+    </div>
+
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <div class="instructions">
+        Setas/WASD: Mover | Espaço: Pular | Z/J: Espada | F: Magia | Shift: Dash
+    </div>
+
+<script>
+/** CONFIGURAÇÕES */
+const GRAVITY = 0.6;
+const FRICTION = 0.8;
+const MOVE_SPEED = 0.8; 
+const MAX_SPEED = 5;
+const JUMP_FORCE = -13; 
+const DOUBLE_JUMP_FORCE = -11;
+const ATTACK_DURATION = 15; 
+const ATTACK_COOLDOWN = 25;
+const INVULNERABILITY_TIME = 60; 
+const SPELL_COST = 33; 
+const SOUL_GAIN = 15; 
+
+// Configurações do Dash
+const DASH_DISTANCE = 15; // Velocidade (em ticks)
+const DASH_DURATION = 10;  // Duração em frames
+const DASH_COOLDOWN = 40; // Cooldown em frames
+const DASH_COST = 10;    // Custo de Alma
+
+const COLORS = {
+    player: '#3498db',
+    playerAttack: '#ecf0f1',
+    spell: '#ffffff',
+    enemyWalker: '#e74c3c',
+    enemyFlyer: '#e67e22',
+    enemyShooter: '#27ae60',
+    boss: '#8e44ad',
+    bossPhase2: '#c0392b',
+    wall: '#7f8c8d',
+    platform: '#555',
+    item: '#f1c40f',
+    portal: '#9b59b6',
+    finalZone: '#2ecc71'
+};
+
+/** INPUT */
+const keys = { left: false, right: false, up: false, jumpPressed: false, attack: false, spell: false, spellPressed: false, dash: false, dashPressed: false };
+
+window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = true;
+    if (e.key === 'ArrowRight' || e.key === 'd') keys.right = true;
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'k') { if (!keys.up) keys.jumpPressed = true; keys.up = true; }
+    if (e.key === 'z' || e.key === 'j') keys.attack = true;
+    if (e.key === 'f' || e.key === 'l') { if (!keys.spell) keys.spellPressed = true; keys.spell = true; }
+    if (e.key === 'Shift') { if (!keys.dash) keys.dashPressed = true; keys.dash = true; }
+    if (e.key === 'Enter' && game.gameOver) initGame();
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === 'ArrowLeft' || e.key === 'a') keys.left = false;
+    if (e.key === 'ArrowRight' || e.key === 'd') keys.right = false;
+    if (e.key === ' ' || e.key === 'ArrowUp' || e.key === 'w' || e.key === 'k') keys.up = false;
+    if (e.key === 'z' || e.key === 'j') keys.attack = false;
+    if (e.key === 'f' || e.key === 'l') keys.spell = false;
+    if (e.key === 'Shift') keys.dash = false;
+});
+
+/** UTILITÁRIOS */
+function checkCollision(r1, r2) {
+    return (r1.x < r2.x + r2.w && r1.x + r1.w > r2.x && r1.y < r2.y + r2.h && r1.y + r1.h > r2.y);
+}
+
+/** CLASSES */
+
+class Projectile {
+    constructor(x, y, direction, isPlayer, vy = 0) {
+        this.x = x;
+        this.y = y;
+        this.w = isPlayer ? 50 : 20; 
+        this.h = isPlayer ? 30 : 20;
+        this.vx = direction * (isPlayer ? 10 : 6); 
+        this.vy = vy; // Permite tiros angulados
+        this.isPlayer = isPlayer;
+        this.life = 80;
+        this.active = true;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life--;
+        if (this.life <= 0) this.active = false;
+    }
+
+    draw(ctx) {
+        ctx.fillStyle = this.isPlayer ? COLORS.spell : '#e74c3c';
+        ctx.beginPath();
+        ctx.arc(this.x + this.w/2, this.y + this.h/2, this.h/2, 0, Math.PI*2);
+        ctx.fill();
+        if (this.isPlayer) {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+            ctx.fillRect(this.x - (this.vx*1.5), this.y + 5, this.w, this.h - 10);
+        }
+    }
+}
+
+class Player {
+    constructor(x, y) {
+        this.x = x; this.y = y;
+        this.w = 30; this.h = 40;
+        this.vx = 0; this.vy = 0;
+        this.grounded = false;
+        this.facingRight = true;
+        this.hp = 100; this.maxHp = 100;
+        this.soul = 0; this.maxSoul = 100;
+        this.attacking = false;
+        this.attackTimer = 0;
+        this.attackCooldown = 0;
+        this.invulnerableTimer = 0;
+        this.hasDoubleJump = false;
+        this.jumpsLeft = 0;
+
+        // Dash State
+        this.isDashing = false;
+        this.dashTimer = 0;
+        this.dashCooldown = 0;
+        this.dashDirection = 1;
+    }
+
+    update(room) {
+        // Cooldowns
+        if (this.attackCooldown > 0) this.attackCooldown--;
+        if (this.invulnerableTimer > 0) this.invulnerableTimer--;
+        if (this.dashCooldown > 0) this.dashCooldown--;
+
+        // Lógica de Dash
+        if (this.isDashing) {
+            // Durante o dash, o player é invulnerável
+            this.invulnerableTimer = 1; 
+            this.vx = this.dashDirection * DASH_DISTANCE;
+            this.vy = 0; // Dash horizontal puro
+            this.dashTimer--;
+
+            if (this.dashTimer <= 0) {
+                this.isDashing = false;
+                this.vx *= 0.1; // Para rapidamente após o dash
+            }
+        } 
+        else if (keys.dashPressed) {
+            if (this.dashCooldown <= 0 && this.soul >= DASH_COST) {
+                this.isDashing = true;
+                this.dashTimer = DASH_DURATION;
+                this.dashCooldown = DASH_COOLDOWN;
+                this.soul -= DASH_COST;
+                this.dashDirection = this.facingRight ? 1 : -1;
+            } else if (this.dashCooldown > 0) {
+                game.showMessage("Dash em cooldown!");
+            } else if (this.soul < DASH_COST) {
+                game.showMessage("Alma insuficiente para Dash!");
+            }
+            keys.dashPressed = false;
+        }
+
+        if (!this.isDashing) {
+            // Movimento normal (ignorado durante o dash)
+            if (keys.left) { this.vx -= MOVE_SPEED; this.facingRight = false; }
+            if (keys.right) { this.vx += MOVE_SPEED; this.facingRight = true; }
+            this.vx *= FRICTION;
+            this.vx = Math.max(Math.min(this.vx, MAX_SPEED), -MAX_SPEED);
+
+            // Pulo
+            if (keys.jumpPressed) {
+                if (this.grounded) {
+                    this.vy = JUMP_FORCE;
+                    this.grounded = false;
+                } else if (this.hasDoubleJump && this.jumpsLeft > 0) {
+                    this.vy = DOUBLE_JUMP_FORCE;
+                    this.jumpsLeft--;
+                    this.vx = keys.left ? -MAX_SPEED : (keys.right ? MAX_SPEED : this.vx); 
+                }
+                keys.jumpPressed = false;
+            }
+
+            this.vy += GRAVITY;
+        }
+
+        this.x += this.vx;
+        this.checkMapCollision(room.platforms, 'x');
+        this.y += this.vy;
+        this.grounded = false;
+        this.checkMapCollision(room.platforms, 'y');
+
+        if (this.y > room.height + 100) { this.takeDamage(20); this.respawn(room); }
+
+        // Ataque
+        if (keys.attack && this.attackCooldown <= 0 && !this.isDashing) {
+            this.attacking = true;
+            this.attackTimer = ATTACK_DURATION;
+            this.attackCooldown = ATTACK_COOLDOWN;
+        }
+
+        if (this.attacking) {
+            this.attackTimer--;
+            let reach = 90; // Alcance do ferrão
+            let attackRect = {
+                x: this.facingRight ? this.x + this.w : this.x - reach,
+                y: this.y - 15, 
+                w: reach,
+                h: 70
+            };
+
+            // Dano em inimigos e BOSS
+            [...room.enemies, ...(room.boss ? [room.boss] : [])].forEach(enemy => {
+                if (enemy.alive && enemy.invulnerableTimer <= 0 && checkCollision(attackRect, enemy)) {
+                    enemy.takeDamage(10);
+                    this.gainSoul(SOUL_GAIN);
+                    // Knockback menor em boss
+                    let kb = (enemy instanceof Boss) ? 1 : 5;
+                    enemy.vx = this.facingRight ? kb : -kb;
+                }
+            });
+            if (this.attackTimer <= 0) this.attacking = false;
+        }
+
+        // Magia
+        if (keys.spellPressed && !this.isDashing) {
+            if (this.soul >= SPELL_COST) {
+                this.soul -= SPELL_COST;
+                let px = this.facingRight ? this.x + this.w : this.x - 60;
+                let dir = this.facingRight ? 1 : -1;
+                this.vx = dir * -4; 
+                room.projectiles.push(new Projectile(px, this.y + 5, dir, true));
+            } else {
+                game.showMessage("Sem alma!");
+            }
+            keys.spellPressed = false;
+        }
+
+        // Coleta e Portais (Omitidos para brevidade, mantenha a lógica de coleta original)
+        room.items = room.items.filter(item => {
+            if (checkCollision(this, item)) {
+                if (item.type === 'double_jump') {
+                    this.hasDoubleJump = true;
+                    game.showMessage("PULO DUPLO OBTIDO!");
+                    document.getElementById('skill-display').innerText = "Pulo Duplo";
+                    document.getElementById('skill-display').style.color = "#f1c40f";
+                }
+                return false;
+            }
+            return true;
+        });
+
+        room.portals.forEach(portal => {
+            if (checkCollision(this, portal)) {
+                game.loadRoom(portal.targetRoom, portal.targetX, portal.targetY);
+            }
+        });
+    }
+
+    checkMapCollision(platforms, axis) {
+        for (let p of platforms) {
+            if (checkCollision(this, p)) {
+                if (axis === 'x') {
+                    if (this.vx > 0) this.x = p.x - this.w;
+                    else if (this.vx < 0) this.x = p.x + p.w;
+                    if (this.isDashing) this.isDashing = false; // Cancela Dash ao bater
+                    this.vx = 0;
+                } else {
+                    if (this.vy > 0) {
+                        this.y = p.y - this.h;
+                        this.grounded = true;
+                        this.vy = 0;
+                        this.jumpsLeft = 1;
+                    } else if (this.vy < 0) {
+                        this.y = p.y + p.h;
+                        this.vy = 0;
+                    }
+                }
+            }
+        }
+    }
+
+    takeDamage(amount) {
+        if (this.invulnerableTimer > 0) return;
+        this.hp -= amount;
+        this.invulnerableTimer = INVULNERABILITY_TIME;
+        this.vy = -5;
+        this.isDashing = false; // Cancela Dash se levar dano
+        if (this.hp <= 0) game.gameOver = true;
+    }
+
+    gainSoul(amount) { this.soul = Math.min(this.soul + amount, this.maxSoul); }
+    respawn(room) { this.x = room.spawnX; this.y = room.spawnY; this.vx = 0; this.vy = 0; this.hp = Math.max(this.hp, 50); }
+
+    draw(ctx) {
+        // Efeito de Invulnerabilidade/Dash
+        if (this.invulnerableTimer > 0 && !this.isDashing && Math.floor(Date.now() / 50) % 2 === 0) return;
+
+        ctx.fillStyle = this.isDashing ? '#34e0a1' : COLORS.player;
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+        ctx.fillStyle = 'white';
+        let eyeOffset = this.facingRight ? 18 : 4;
+        ctx.fillRect(this.x + eyeOffset, this.y + 8, 8, 8);
+
+        // Desenho da Espada (Hitbox Transparente)
+        if (this.attacking) {
+            ctx.save();
+            let atkX = this.facingRight ? this.x + this.w : this.x - 90;
+            
+            // Área de efeito transparente
+            ctx.globalAlpha = 0.4;
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            // Forma de arco/corte estilizado
+            if (this.facingRight) {
+                ctx.moveTo(this.x + this.w/2, this.y + this.h/2);
+                ctx.arc(this.x + this.w/2, this.y + this.h/2, 100, -0.5, 0.5);
+            } else {
+                ctx.moveTo(this.x + this.w/2, this.y + this.h/2);
+                ctx.arc(this.x + this.w/2, this.y + this.h/2, 100, Math.PI - 0.5, Math.PI + 0.5);
+            }
+            ctx.fill();
+            
+            // "Flash" mais sólido no centro do corte
+            ctx.globalAlpha = 0.8;
+            ctx.fillStyle = COLORS.playerAttack;
+            ctx.fillRect(atkX, this.y - 15, 90, 70);
+            
+            ctx.restore();
+        }
+
+        // Desenho do Rastro de Dash
+        if (this.isDashing && this.dashTimer % 2 === 0) {
+            ctx.save();
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#34e0a1';
+            let trailX = this.x - (this.dashDirection * (DASH_DURATION - this.dashTimer) * DASH_DISTANCE * 0.1);
+            ctx.fillRect(trailX, this.y, this.w, this.h);
+            ctx.restore();
+        }
+    }
+}
+
+class Enemy {
+    constructor(x, y, type = 'walker', range = 100) {
+        this.x = x; this.y = y;
+        this.w = 30; this.h = 30;
+        this.vx = type === 'flyer' ? 1 : 1.5;
+        this.vy = 0;
+        this.startX = x; this.startY = y;
+        this.range = range;
+        this.type = type; // 'walker', 'flyer', 'shooter'
+        this.hp = 20;
+        this.alive = true;
+        this.invulnerableTimer = 0;
+        this.shootTimer = 0;
+    }
+
+    update(platforms, player, room) {
+        if (!this.alive) return;
+        if (this.invulnerableTimer > 0) this.invulnerableTimer--;
+
+        // Colisão com Player (Ignorada se o player estiver em Dash)
+        if (checkCollision(this, player) && !player.isDashing) {
+            player.takeDamage(10);
+        }
+
+        // Comportamentos por Tipo
+        if (this.type === 'walker') {
+            this.vy += GRAVITY;
+            this.x += this.vx;
+            // Patrulha
+            if (this.x > this.startX + this.range || this.x < this.startX) this.vx *= -1;
+            
+            // Colisão com chão
+            let grounded = false;
+            for (let p of platforms) {
+                if (checkCollision(this, p)) {
+                    if (this.vy > 0) { this.y = p.y - this.h; this.vy = 0; grounded = true; }
+                }
+            }
+            if (!grounded) this.y += this.vy; // Cai se não tiver chão
+        } 
+        else if (this.type === 'flyer') {
+            // Voa em direção ao player lentamente se estiver perto
+            let dist = Math.sqrt(Math.pow(player.x - this.x, 2) + Math.pow(player.y - this.y, 2));
+            if (dist < 300) {
+                this.x += (player.x - this.x) * 0.01;
+                this.y += (player.y - this.y) * 0.01;
+            } else {
+                // Idle bobbing
+                this.y = this.startY + Math.sin(Date.now() / 400) * 20;
+            }
+        }
+        else if (this.type === 'shooter') {
+            this.vy += GRAVITY;
+            // Verifica chão
+            for (let p of platforms) {
+                if (checkCollision(this, p) && this.vy > 0) { this.y = p.y - this.h; this.vy = 0; }
+            }
+            this.y += this.vy;
+
+            // Atira se player estiver na linha horizontal
+            if (Math.abs(player.y - this.y) < 50 && Math.abs(player.x - this.x) < 400) {
+                this.shootTimer++;
+                // Olha pro player
+                if (player.x > this.x) this.w = 30; // hack visual, podia usar facingRight
+                
+                if (this.shootTimer > 120) {
+                    let dir = player.x > this.x ? 1 : -1;
+                    room.projectiles.push(new Projectile(this.x + 15, this.y + 10, dir, false));
+                    this.shootTimer = 0;
+                }
+            }
+        }
+    }
+
+    takeDamage(dmg) {
+        this.hp -= dmg;
+        this.invulnerableTimer = 5;
+        if (this.hp <= 0) this.alive = false;
+    }
+
+    draw(ctx) {
+        if (!this.alive) return;
+        if (this.invulnerableTimer > 0) ctx.fillStyle = '#fff';
+        else if (this.type === 'walker') ctx.fillStyle = COLORS.enemyWalker;
+        else if (this.type === 'flyer') ctx.fillStyle = COLORS.enemyFlyer;
+        else if (this.type === 'shooter') ctx.fillStyle = COLORS.enemyShooter;
+
+        ctx.fillRect(this.x, this.y, this.w, this.h);
+        
+        // Asas para flyer
+        if (this.type === 'flyer') {
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            let wingY = Math.sin(Date.now() / 50) * 5;
+            ctx.fillRect(this.x - 10, this.y + 5 + wingY, 10, 10);
+            ctx.fillRect(this.x + this.w, this.y + 5 + wingY, 10, 10);
+        }
+        // Arma para shooter
+        if (this.type === 'shooter') {
+            ctx.fillStyle = '#222';
+            ctx.fillRect(this.x + 10, this.y + 10, 20, 5);
+        }
+    }
+}
+
+class Boss extends Enemy {
+    constructor(x, y) {
+        super(x, y, 'boss', 0);
+        this.w = 60; this.h = 80;
+        this.hp = 300; this.maxHp = 300;
+        this.phase = 1;
+        this.state = 'IDLE'; // IDLE, JUMP, SHOOT
+        this.stateTimer = 0;
+    }
+
+    update(platforms, player, room) {
+        if (!this.alive) return;
+        this.stateTimer++;
+
+        // Checar Fases
+        if (this.phase === 1 && this.hp < this.maxHp / 2) {
+            this.phase = 2;
+            document.getElementById('boss-hp-bar').style.backgroundColor = COLORS.bossPhase2;
+            game.showMessage("O GUARDIÃO ENTRA EM FÚRIA!");
+        }
+
+        // Lógica de Estado
+        if (this.state === 'IDLE') {
+            // Recupera-se ou espera
+            let waitTime = this.phase === 1 ? 60 : 30; // Mais rápido na fase 2
+            this.vx *= 0.8; // Desacelera
+
+            if (this.stateTimer > waitTime) {
+                this.stateTimer = 0;
+                // Escolhe próxima ação aleatória
+                let rand = Math.random();
+                if (rand < 0.5) this.state = 'SHOOT';
+                else this.state = 'JUMP';
+            }
+        }
+        else if (this.state === 'SHOOT') {
+            if (this.stateTimer === 20) { // Tempo de "cast"
+                let dir = (player.x > this.x) ? 1 : -1;
+                
+                if (this.phase === 1) {
+                    // Tiro único
+                    room.projectiles.push(new Projectile(this.x + this.w/2, this.y + 20, dir, false));
+                } else {
+                    // Tiro Triplo (Fan)
+                    room.projectiles.push(new Projectile(this.x + this.w/2, this.y + 20, dir, false, 0));
+                    room.projectiles.push(new Projectile(this.x + this.w/2, this.y + 20, dir, false, -2)); // Cima
+                    room.projectiles.push(new Projectile(this.x + this.w/2, this.y + 20, dir, false, 2)); // Baixo
+                }
+            }
+            if (this.stateTimer > 40) {
+                this.state = 'IDLE';
+                this.stateTimer = 0;
+            }
+        }
+        else if (this.state === 'JUMP') {
+            if (this.stateTimer === 1) {
+                this.vy = -15;
+                this.vx = (player.x > this.x) ? 5 : -5;
+                if (this.phase === 2) this.vx *= 1.5; // Pulo mais agressivo
+            }
+            // Aterrissagem
+            if (this.vy === 0 && this.stateTimer > 10) {
+                this.state = 'IDLE';
+                this.stateTimer = 0;
+            }
+        }
+
+        // Física básica
+        this.vy += GRAVITY;
+        this.x += this.vx;
+        
+        // Colisão Chão (Fixada no chão da arena 420y)
+        if (this.y > 420) { this.y = 420; this.vy = 0; }
+        
+        // Colisão Paredes
+        if (this.x < 50) { this.x = 50; this.vx *= -1; }
+        if (this.x > 700) { this.x = 700; this.vx *= -1; }
+
+        // Dano no player (Ignorada se o player estiver em Dash)
+        if (checkCollision(this, player) && !player.isDashing) player.takeDamage(10);
+        
+        if (this.invulnerableTimer > 0) this.invulnerableTimer--;
+
+        // HUD Boss
+        let bossBar = document.getElementById('boss-hp-container');
+        if (bossBar.style.display !== 'block') bossBar.style.display = 'block';
+        document.getElementById('boss-hp-bar').style.width = (this.hp / this.maxHp * 100) + '%';
+    }
+
+    draw(ctx) {
+        if (!this.alive) return;
+        if (this.invulnerableTimer > 0) ctx.fillStyle = '#fff';
+        else ctx.fillStyle = this.phase === 1 ? COLORS.boss : COLORS.bossPhase2;
+
+        // Efeito de tremor na Fase 2
+        let shake = (this.phase === 2) ? Math.random() * 4 - 2 : 0;
+        
+        ctx.fillRect(this.x + shake, this.y, this.w, this.h);
+        
+        // Olhos
+        ctx.fillStyle = 'yellow';
+        ctx.fillRect(this.x + 10 + shake, this.y + 15, 15, 15);
+        ctx.fillRect(this.x + 35 + shake, this.y + 15, 15, 15);
+    }
+}
+
+class Room {
+    constructor(id, name, width, height, spawnX, spawnY) {
+        this.id = id; this.name = name;
+        this.width = width; this.height = height;
+        this.spawnX = spawnX; this.spawnY = spawnY;
+        this.platforms = []; this.enemies = []; this.items = []; this.portals = []; this.projectiles = [];
+        this.boss = null;
+    }
+    addPlatform(x, y, w, h) { this.platforms.push({x, y, w, h}); }
+    
+    draw(ctx) {
+        ctx.fillStyle = COLORS.wall;
+        for (let p of this.platforms) { ctx.fillRect(p.x, p.y, p.w, p.h); ctx.strokeStyle='#333'; ctx.strokeRect(p.x,p.y,p.w,p.h); }
+        for (let p of this.portals) {
+            ctx.fillStyle = p.isFinal ? COLORS.finalZone : COLORS.portal;
+            ctx.globalAlpha = 0.6; ctx.fillRect(p.x, p.y, p.w, p.h); ctx.globalAlpha = 1.0;
+            ctx.fillStyle='white'; ctx.font='12px Arial'; ctx.fillText(p.isFinal?"SAÍDA":"PORTA", p.x, p.y-5);
+        }
+        for (let i of this.items) {
+            ctx.fillStyle = COLORS.item; let fy = Math.sin(Date.now()/200)*5;
+            ctx.beginPath(); ctx.arc(i.x+i.w/2, i.y+i.h/2+fy, 15, 0, Math.PI*2); ctx.fill();
+            ctx.fillStyle='black'; ctx.fillText("ITEM", i.x+2, i.y+i.h/2+fy+4);
+        }
+        this.enemies.forEach(e => e.draw(ctx));
+        if (this.boss) this.boss.draw(ctx);
+        this.projectiles.forEach(p => p.draw(ctx));
+    }
+}
+
+class Game {
+    constructor() {
+        this.canvas = document.getElementById('gameCanvas');
+        this.ctx = this.canvas.getContext('2d');
+        this.player = new Player(100, 300);
+        this.rooms = {}; this.currentRoom = null;
+        this.camera = { x: 0, y: 0 };
+        this.message = ""; this.messageTimer = 0;
+        this.gameOver = false; this.victory = false;
+        this.initLevels();
+        this.loadRoom(0, 100, 300);
+        this.loop = this.loop.bind(this);
+        requestAnimationFrame(this.loop);
+    }
+
+    initLevels() {
+        // --- SALA 0: TUTO ---
+        let r0 = new Room(0, "Área de Pouso", 1200, 600, 50, 400);
+        r0.addPlatform(0, 0, 50, 600);
+        r0.addPlatform(0, 500, 500, 100);
+        r0.addPlatform(600, 400, 600, 200); 
+        r0.addPlatform(400, 350, 100, 20); 
+        r0.portals.push({x: 1150, y: 300, w: 40, h: 100, targetRoom: 1, targetX: 60, targetY: 400});
+        // Novo inimigo Flyer
+        r0.enemies.push(new Enemy(800, 300, 'flyer'));
+
+        // --- SALA 1: HUB CENTRAL (Plataformas ajustadas - Distância reduzida) ---
+        let r1 = new Room(1, "O Grande Hall", 1600, 800, 60, 400);
+        r1.addPlatform(0, 500, 1600, 50);
+        r1.addPlatform(0, 0, 50, 800);
+        r1.addPlatform(1550, 0, 50, 800);
+        
+        // Plataformas centrais (Ajuste vertical para facilitar pulos)
+        r1.addPlatform(400, 380, 200, 20); // Mais baixa
+        r1.addPlatform(700, 300, 200, 20); // Menos alta
+        
+        // Escada para item especial (Distâncias menores: ~80px entre elas)
+        r1.addPlatform(1000, 220, 100, 20); 
+        r1.addPlatform(1200, 140, 100, 20); 
+        
+        r1.portals.push({x: 10, y: 400, w: 40, h: 100, targetRoom: 0, targetX: 1100, targetY: 300});
+        r1.addPlatform(500, 550, 20, 250); 
+        r1.portals.push({x: 600, y: 560, w: 100, h: 40, targetRoom: 2, targetX: 100, targetY: 100});
+        r1.portals.push({x: 1500, y: 50, w: 40, h: 100, targetRoom: 3, targetX: 50, targetY: 450});
+
+        // Inimigos Variados
+        r1.enemies.push(new Enemy(200, 470, 'shooter')); // Atirador no chão
+        r1.enemies.push(new Enemy(800, 200, 'flyer'));   // Voador no topo
+
+        // --- SALA 2: CAVERNA (Distância Vertical Reduzida) ---
+        let r2 = new Room(2, "Caverna Profunda", 1000, 800, 100, 100);
+        r2.addPlatform(0, 0, 50, 800);
+        r2.addPlatform(950, 0, 50, 800);
+        r2.addPlatform(0, 750, 1000, 50);
+        
+        // Plataformas de descida mais próximas
+        r2.addPlatform(50, 180, 200, 20);
+        r2.addPlatform(300, 280, 200, 20);
+        r2.addPlatform(100, 400, 200, 20);
+        r2.addPlatform(400, 520, 200, 20);
+
+        r2.items.push({x: 850, y: 650, w: 30, h: 30, type: 'double_jump'});
+        r2.portals.push({x: 50, y: 50, w: 100, h: 40, targetRoom: 1, targetX: 650, targetY: 450});
+        
+        r2.enemies.push(new Enemy(400, 620, 'walker'));
+        r2.enemies.push(new Enemy(600, 550, 'flyer')); // Voador protegendo o item
+
+        // --- SALA 3: BOSS ROOM ---
+        let r3 = new Room(3, "Santuário do Guardião", 800, 600, 50, 450);
+        r3.addPlatform(0, 500, 800, 100);
+        r3.addPlatform(0, 0, 50, 600);
+        r3.addPlatform(750, 0, 50, 600);
+        r3.portals.push({x: 650, y: 400, w: 50, h: 100, isFinal: true});
+        
+        // BOSS SEPARADO
+        r3.boss = new Boss(400, 420);
+
+        this.rooms[0] = r0; this.rooms[1] = r1; this.rooms[2] = r2; this.rooms[3] = r3;
+    }
+
+    loadRoom(id, x, y) {
+        if (this.currentRoom) this.currentRoom.projectiles = [];
+        document.getElementById('boss-hp-container').style.display = 'none';
+        
+        this.currentRoom = this.rooms[id];
+        this.player.x = x; this.player.y = y; this.player.vx = 0; this.player.vy = 0;
+        document.getElementById('room-display').innerText = this.currentRoom.name;
+        this.showMessage("Entrou em: " + this.currentRoom.name);
+    }
+
+    showMessage(text) { this.message = text; this.messageTimer = 180; }
+
+    update() {
+        if (this.gameOver || this.victory) return;
+
+        this.player.update(this.currentRoom);
+        
+        this.currentRoom.enemies.forEach(e => e.update(this.currentRoom.platforms, this.player, this.currentRoom));
+        if (this.currentRoom.boss) this.currentRoom.boss.update(this.currentRoom.platforms, this.player, this.currentRoom);
+
+        // Projéteis
+        this.currentRoom.projectiles = this.currentRoom.projectiles.filter(p => {
+            p.update();
+            let targets = p.isPlayer ? [...this.currentRoom.enemies, ...(this.currentRoom.boss ? [this.currentRoom.boss] : [])] : [this.player];
+            
+            for (let t of targets) {
+                // Não causa dano ao player se ele estiver em dash
+                if (t === this.player && this.player.isDashing) continue; 
+                
+                if (t.alive && checkCollision(p, t)) {
+                    if (p.isPlayer) { t.takeDamage(35); } 
+                    else { t.takeDamage(15); }
+                    return false;
+                }
+            }
+            // Colisão com parede
+            for (let plat of this.currentRoom.platforms) {
+                if (checkCollision(p, plat)) return false;
+            }
+
+            return p.active && p.x > this.camera.x - 100 && p.x < this.camera.x + 900;
+        });
+
+        // Vitória
+        this.currentRoom.portals.forEach(p => {
+            if (p.isFinal && checkCollision(this.player, p)) {
+                if (this.currentRoom.boss && this.currentRoom.boss.alive) this.showMessage("Derrote o Guardião primeiro!");
+                else this.victory = true;
+            }
+        });
+
+        this.camera.x = Math.max(0, Math.min(this.player.x - 400, this.currentRoom.width - 800));
+        this.camera.y = Math.max(0, Math.min(this.player.y - 300, this.currentRoom.height - 600));
+
+        document.getElementById('hp-bar').style.width = `${this.player.hp}%`;
+        document.getElementById('soul-bar').style.width = `${this.player.soul}%`;
+    }
+
+    draw() {
+        this.ctx.fillStyle = '#0d0d0d';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        this.ctx.save();
+        this.ctx.translate(-this.camera.x, -this.camera.y);
+
+        if (this.currentRoom) this.currentRoom.draw(this.ctx);
+        this.player.draw(this.ctx);
+
+        this.ctx.restore();
+
+        if (this.messageTimer > 0) {
+            this.ctx.fillStyle = 'white'; this.ctx.font = '20px Arial'; this.ctx.textAlign = 'center';
+            this.ctx.fillText(this.message, this.canvas.width/2, 100);
+            this.messageTimer--;
+        }
+
+        if (this.gameOver) {
+            this.ctx.fillStyle = 'rgba(0,0,0,0.8)'; this.ctx.fillRect(0, 0, 800, 600);
+            this.ctx.fillStyle = 'red'; this.ctx.font = '40px Arial'; this.ctx.textAlign = 'center';
+            this.ctx.fillText("VOCÊ MORREU", 400, 300);
+            this.ctx.fillStyle = 'white'; this.ctx.font = '20px Arial';
+            this.ctx.fillText("Enter para reiniciar", 400, 340);
+        }
+
+        if (this.victory) {
+            this.ctx.fillStyle = 'rgba(0,0,0,0.8)'; this.ctx.fillRect(0, 0, 800, 600);
+            this.ctx.fillStyle = '#2ecc71'; this.ctx.font = '40px Arial'; this.ctx.textAlign = 'center';
+            this.ctx.fillText("VITÓRIA!", 400, 300);
+        }
+    }
+
+    loop() { this.update(); this.draw(); requestAnimationFrame(this.loop); }
+}
+
+let game;
+function initGame() { game = new Game(); }
+window.onload = initGame;
+</script>
+</body>
+</html>

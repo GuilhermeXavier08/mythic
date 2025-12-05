@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cavaleiro do Vazio - Boss Battle</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #050505;
+            color: #ccc;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+        }
+
+        canvas {
+            background-color: #1a1a1d;
+            /* Fundo escuro estilo Deepnest/City of Tears */
+            display: block;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            pointer-events: none;
+        }
+
+        .hud-text {
+            color: #fff;
+            text-shadow: 1px 1px 0 #000;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="game-container">
+        <canvas id="gameCanvas" width="800" height="450"></canvas>
+        <div id="ui-layer">
+            <div id="health-display" class="hud-text">VIDA: ♥♥♥♥♥</div>
+            <div id="soul-display" class="hud-text">ALMA: 0%</div>
+            <div id="boss-hp-bar" class="hud-text" style="display:none; width: 780px; text-align: center;">
+                GUARDIÃ
+                <div style="width: 100%; height: 5px; background: #333; margin-top:2px;">
+                    <div id="boss-hp-fill" style="width: 100%; height: 100%; background: #a22;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ENGINE E UTILITÁRIOS
+         */
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Constantes de Jogo
+        const GRAVITY = 0.6;
+        const FRICTION = 0.85;
+        const GROUND_FRICTION = 0.8;
+        const PLAYER_SPEED = 5;
+        const JUMP_FORCE = 13;
+        const DASH_SPEED = 14;
+        const DASH_DURATION = 10; // Frames
+        const DASH_COOLDOWN = 48; // Frames (~0.8s)
+        const ATTACK_COOLDOWN = 20;
+        const INVULNERABILITY_TIME = 60; // 1 segundo
+        const SCREEN_WIDTH = 800;
+        const SCREEN_HEIGHT = 450;
+
+        // Inputs
+        const keys = {
+            left: false, right: false, up: false, down: false,
+            jump: false, attack: false, dash: false, spell: false, focus: false
+        };
+
+        const inputState = {
+            jumpPressed: false,
+            attackPressed: false,
+            dashPressed: false,
+            spellPressed: false
+        };
+
+        window.addEventListener('keydown', (e) => {
+            const k = e.key.toLowerCase();
+            if (['arrowleft', 'a'].includes(k)) keys.left = true;
+            if (['arrowright', 'd'].includes(k)) keys.right = true;
+            if (['arrowup', 'w'].includes(k)) keys.up = true;
+            if (['arrowdown', 's'].includes(k)) keys.down = true;
+            if (['z', ' '].includes(k)) {
+                if (!inputState.jumpPressed) keys.jump = true;
+                inputState.jumpPressed = true;
+            }
+            if (['x', 'k'].includes(k)) {
+                if (!inputState.attackPressed) keys.attack = true;
+                inputState.attackPressed = true;
+            }
+            // Adicionado 'shift' para Dash
+            if (['c', 'l', 'shift'].includes(k)) {
+                if (!inputState.dashPressed) keys.dash = true;
+                inputState.dashPressed = true;
+            }
+            if (['a', 'f', 'q'].includes(k)) {
+                if (!inputState.spellPressed && k !== 'a') keys.spell = true;
+                if (k === 'f' || k === 'q') inputState.spellPressed = true;
+            }
+            if (k === 'f' || k === 'q') keys.spell = true;
+            if (k === 'control') keys.focus = true; // Tecla de Cura
+        });
+
+        window.addEventListener('keyup', (e) => {
+            const k = e.key.toLowerCase();
+            if (['arrowleft', 'a'].includes(k)) keys.left = false;
+            if (['arrowright', 'd'].includes(k)) keys.right = false;
+            if (['arrowup', 'w'].includes(k)) keys.up = false;
+            if (['arrowdown', 's'].includes(k)) keys.down = false;
+            if (['z', ' '].includes(k)) { keys.jump = false; inputState.jumpPressed = false; }
+            if (['x', 'k'].includes(k)) { keys.attack = false; inputState.attackPressed = false; }
+            if (['c', 'l', 'shift'].includes(k)) { keys.dash = false; inputState.dashPressed = false; }
+            if (['f', 'q'].includes(k)) { keys.spell = false; inputState.spellPressed = false; }
+            if (k === 'g') keys.focus = false;
+        });
+
+        function checkRectCollision(r1, r2) {
+            return (r1.x < r2.x + r2.w &&
+                r1.x + r1.w > r2.x &&
+                r1.y < r2.y + r2.h &&
+                r1.y + r1.h > r2.y);
+        }
+
+        // Efeitos Visuais
+        let particles = [];
+        class Particle {
+            constructor(x, y, color, speed, size, life) {
+                this.x = x; this.y = y;
+                this.color = color;
+                this.vx = (Math.random() - 0.5) * speed;
+                this.vy = (Math.random() - 0.5) * speed;
+                this.size = size;
+                this.life = life;
+                this.maxLife = life;
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+                this.size *= 0.95;
+            }
+            draw(ctx) {
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.life / this.maxLife;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        function spawnParticles(x, y, color, count = 5) {
+            for (let i = 0; i < count; i++) particles.push(new Particle(x, y, color, 5, 4, 30));
+        }
+
+        // Texto flutuante
+        let texts = [];
+        function showText(str, x, y, duration = 60) {
+            texts.push({ str, x, y, duration });
+        }
+
+        /**
+         * CLASSES DO JOGO
+         */
+
+        class Entity {
+            constructor(x, y, w, h, color) {
+                this.x = x; this.y = y; this.w = w; this.h = h;
+                this.vx = 0; this.vy = 0;
+                this.color = color;
+                this.grounded = false;
+                this.facingRight = true;
+                this.hp = 1;
+                this.dead = false;
+                this.invul = 0;
+                this.lockFacing = 0; // Trava a direção do olhar por X frames
+            }
+
+            applyPhysics() {
+                this.vy += GRAVITY;
+                this.vx *= this.grounded ? GROUND_FRICTION : FRICTION;
+
+                // Limite de velocidade terminal
+                if (this.vy > 15) this.vy = 15;
+
+                // Movimento X
+                this.x += this.vx;
+                this.checkMapCollision(true);
+
+                // Movimento Y
+                this.y += this.vy;
+                this.grounded = false;
+                this.checkMapCollision(false);
+
+                // Atualiza para onde olha apenas se movendo E não estiver travado
+                if (Math.abs(this.vx) > 0.1 && this.lockFacing <= 0) {
+                    this.facingRight = this.vx > 0;
+                }
+
+                // Decrementa trava
+                if (this.lockFacing > 0) this.lockFacing--;
+            }
+
+            checkMapCollision(horizontal) {
+                let walls = Game.currentRoom.walls;
+                for (let wall of walls) {
+                    if (checkRectCollision(this, wall)) {
+                        if (horizontal) {
+                            if (this.vx > 0) this.x = wall.x - this.w;
+                            else if (this.vx < 0) this.x = wall.x + wall.w;
+                            this.vx = 0;
+                        } else {
+                            if (this.vy > 0) {
+                                this.y = wall.y - this.h;
+                                this.grounded = true;
+                            } else if (this.vy < 0) {
+                                this.y = wall.y + wall.h;
+                            }
+                            this.vy = 0;
+                        }
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if (this.invul > 0 && Math.floor(Date.now() / 50) % 2 === 0) return; // Piscar
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+            }
+        }
+
+        class Player extends Entity {
+            constructor(x, y) {
+                super(x, y, 20, 30, '#fff'); // Branco puro (Cavaleiro)
+                this.hp = 5;
+                this.maxHp = 5;
+                this.soul = 0;
+                this.maxSoul = 100;
+
+                // Habilidades
+                this.hasDoubleJump = false;
+                this.canDoubleJump = false;
+
+                // Estados
+                this.dashing = false;
+                this.dashTimer = 0;
+                this.dashCooldown = 0;
+
+                this.attacking = false;
+                this.attackTimer = 0;
+                this.attackDir = 'right';
+
+                this.spellCooldown = 0;
+                this.focusTimer = 0; // Timer para cura
+            }
+
+            update() {
+                if (this.invul > 0) this.invul--;
+                if (this.attackTimer > 0) this.attackTimer--;
+                if (this.dashCooldown > 0) this.dashCooldown--;
+                if (this.spellCooldown > 0) this.spellCooldown--;
+                // ... dentro de Player.update() ...
+
+                // SKILL: FOCAR (CURA)
+                // Correção: troquei this.onGround por this.grounded
+                if (keys.focus && this.soul >= 33 && !this.dashing && !this.attacking && this.grounded) {
+
+                    this.vx = 0;
+                    this.focusTimer++;
+
+                    // Efeito visual 
+                    if (this.focusTimer % 10 === 0) {
+                        spawnParticles(this.x + Math.random() * 20, this.y + Math.random() * 30, '#fff', 2);
+                    }
+
+                    // Completou 1 segundo
+                    if (this.focusTimer >= 60) {
+                        if (this.hp < this.maxHp) {
+                            this.hp++;
+                            this.soul -= 33;
+                            showText("HP +1", this.x, this.y - 40);
+                            spawnParticles(this.x + 10, this.y + 15, '#fff', 20);
+                        }
+                        this.focusTimer = 0;
+                    }
+                    return; // Return aqui é importante para travar o resto do update
+                } else {
+                    this.focusTimer = 0;
+                }
+
+                // Dash
+                if (keys.dash && this.dashCooldown <= 0 && !this.dashing) {
+                    this.dashing = true;
+                    this.dashTimer = DASH_DURATION;
+                    this.dashCooldown = DASH_COOLDOWN;
+                    this.vx = this.facingRight ? DASH_SPEED : -DASH_SPEED;
+                    this.vy = 0;
+                    spawnParticles(this.x + 10, this.y + 15, '#aaf', 5);
+                }
+
+                if (this.dashing) {
+                    this.dashTimer--;
+                    this.vy = 0; // Sem gravidade no dash
+                    this.x += this.vx;
+                    this.checkMapCollision(true); // Colide com paredes no dash
+                    if (this.dashTimer <= 0) {
+                        this.dashing = false;
+                        this.vx = 0;
+                    }
+                    return; // Pula resto da física
+                }
+
+                // Movimento
+                if (keys.left) this.vx -= 1.5;
+                if (keys.right) this.vx += 1.5;
+
+                // Limite de velocidade de corrida
+                if (this.vx > PLAYER_SPEED) this.vx = PLAYER_SPEED;
+                if (this.vx < -PLAYER_SPEED) this.vx = -PLAYER_SPEED;
+
+                // Pulo
+                if (keys.jump) {
+                    if (this.grounded) {
+                        this.vy = -JUMP_FORCE;
+                        this.grounded = false;
+                        keys.jump = false; // Consumir o input
+                        spawnParticles(this.x + 10, this.y + 30, '#fff', 3);
+                    } else if (this.hasDoubleJump && this.canDoubleJump) {
+                        this.vy = -JUMP_FORCE * 0.9;
+                        this.canDoubleJump = false;
+                        keys.jump = false;
+                        spawnParticles(this.x + 10, this.y + 30, '#aaf', 5); // Partículas azuis (Monarch Wings)
+                    }
+                }
+
+                if (this.grounded) this.canDoubleJump = true;
+
+                // Ataque
+                if (keys.attack && this.attackTimer <= 0) {
+                    this.performAttack();
+                }
+
+                // Feitiço (Vengeful Spirit)
+                if (keys.spell && this.soul >= 20 && this.spellCooldown <= 0) {
+                    this.castSpell();
+                }
+
+                this.applyPhysics();
+
+                // Checar Morte
+                if (this.y > SCREEN_HEIGHT + 50) this.takeDamage(1); // Cair no buraco
+            }
+
+            performAttack() {
+                this.attacking = true;
+                this.attackTimer = ATTACK_COOLDOWN;
+
+                // Determinar direção
+                if (keys.up) this.attackDir = 'up';
+                else if (keys.down && !this.grounded) this.attackDir = 'down';
+                else this.attackDir = this.facingRight ? 'right' : 'left';
+
+                // Hitbox do ataque - Ajustada: Mais longa e mais fina (menos gordinha)
+                let hitX = this.x, hitY = this.y, hitW = 0, hitH = 0;
+                const range = 65; // Aumentado alcance
+                const thickness = 20; // Mais fino
+
+                if (this.attackDir === 'right') { hitX += 20; hitW = range; hitH = thickness; hitY += 5; }
+                if (this.attackDir === 'left') { hitX -= range; hitW = range; hitH = thickness; hitY += 5; }
+                if (this.attackDir === 'up') { hitY -= range; hitH = range; hitW = 30; hitX -= 5; }
+                if (this.attackDir === 'down') { hitY += 30; hitH = range; hitW = 30; hitX -= 5; }
+
+                let attackRect = { x: hitX, y: hitY, w: hitW, h: hitH };
+
+                // Efeito visual (Swish) - Mais transparente e alinhado
+                Game.effects.push({ type: 'slash', ...attackRect, life: 5, dir: this.attackDir });
+
+                let hitSomething = false;
+
+                // Colisão com inimigos
+                Game.currentRoom.enemies.forEach(e => {
+                    if (!e.dead && checkRectCollision(attackRect, e)) {
+                        e.takeDamage(1, this.attackDir);
+                        this.gainSoul(5);
+                        hitSomething = true;
+
+                        // Knockback no player com trava de mira (FIX)
+                        if (this.attackDir === 'right') this.vx = -4;
+                        if (this.attackDir === 'left') this.vx = 4;
+                        this.lockFacing = 20; // Trava a direção do olhar por 20 frames
+                    }
+                });
+
+                // Pogo (Bounce) em Espinhos ou Inimigos
+                if (this.attackDir === 'down' && hitSomething) {
+                    this.vy = -JUMP_FORCE * 0.8; // Pogo jump
+                    this.canDoubleJump = true; // Reseta pulo duplo
+                }
+            }
+
+            castSpell() {
+                this.soul -= 20;
+                this.spellCooldown = 30;
+                let vx = this.facingRight ? 10 : -10;
+                let px = this.facingRight ? this.x + 30 : this.x - 40;
+
+                // Entidade Projétil
+                let spell = new Projectile(px, this.y + 5, 40, 20, vx, 0, '#fff', true);
+                Game.currentRoom.projectiles.push(spell);
+
+                // Recuo com trava
+                this.vx = this.facingRight ? -3 : 3;
+                this.lockFacing = 10;
+            }
+
+            takeDamage(amount) {
+                if (this.dashing || this.invul > 0) return;
+                this.hp -= amount;
+                this.invul = INVULNERABILITY_TIME;
+                Game.shake(10);
+                if (this.hp <= 0) Game.gameOver();
+            }
+
+            gainSoul(amount) {
+                this.soul = Math.min(this.soul + amount, this.maxSoul);
+            }
+
+            draw(ctx) {
+                // Cor do cavaleiro
+                if (this.invul > 0 && Math.floor(Date.now() / 50) % 2 === 0) return;
+
+                // Corpo
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, this.w, this.h);
+
+                // "Chifres" (Detalhe simples)
+                ctx.fillRect(this.x, this.y - 8, 6, 8);
+                ctx.fillRect(this.x + this.w - 6, this.y - 8, 6, 8);
+
+                // Capa (Cinza escuro)
+                ctx.fillStyle = '#555';
+                if (this.facingRight) ctx.fillRect(this.x - 5, this.y + 5, 5, 20);
+                else ctx.fillRect(this.x + this.w, this.y + 5, 5, 20);
+            }
+        }
+
+        class Projectile extends Entity {
+            constructor(x, y, w, h, vx, vy, color, isPlayerOwner) {
+                super(x, y, w, h, color);
+                this.vx = vx;
+                this.vy = vy;
+                this.isPlayerOwner = isPlayerOwner;
+                this.life = 60; // Duração
+            }
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life--;
+                if (this.life <= 0) this.dead = true;
+
+                spawnParticles(this.x + this.w / 2, this.y + this.h / 2, this.color, 1);
+
+                if (this.isPlayerOwner) {
+                    Game.currentRoom.enemies.forEach(e => {
+                        if (!e.dead && checkRectCollision(this, e)) {
+                            e.takeDamage(3, this.vx > 0 ? 'right' : 'left'); // Spell dá 3 de dano (Vengeful Spirit)
+                            this.dead = true;
+                        }
+                    });
+                } else {
+                    if (checkRectCollision(this, Game.player)) {
+                        Game.player.takeDamage(1);
+                        this.dead = true;
+                    }
+                }
+
+                // Destruir na parede
+                let walls = Game.currentRoom.walls;
+                for (let w of walls) {
+                    if (checkRectCollision(this, w)) this.dead = true;
+                }
+            }
+            applyPhysics() { } // Sem gravidade
+        }
+
+        // Classe Base de Inimigo
+        class Enemy extends Entity {
+            constructor(x, y, type) {
+                super(x, y, 30, 30, '#fa0'); // Laranja (Infecção)
+                this.type = type;
+                this.hp = 10; // Padrão
+                this.dir = 1;
+                this.timer = 0;
+                this.startPos = { x, y };
+            }
+
+            takeDamage(amount, dirStr) {
+                this.hp -= amount;
+                spawnParticles(this.x + this.w / 2, this.y + this.h / 2, '#fa6', 8);
+
+                // Knockback
+                if (dirStr === 'right') this.vx = 5;
+                if (dirStr === 'left') this.vx = -5;
+                if (dirStr === 'up') this.vy = -5;
+                if (dirStr === 'down') this.vy = 5;
+
+                if (this.hp <= 0) {
+                    this.dead = true;
+                    Game.player.gainSoul(10);
+                }
+            }
+
+            update() {
+                if (this.dead) return;
+                super.applyPhysics();
+
+                // IA Simples baseada no tipo
+                if (this.type === 'crawler') {
+                    this.vx = 1 * this.dir;
+                    // Virar se bater em parede ou for cair
+                    // Detecção simplificada: timer
+                    this.timer++;
+                    if (this.timer > 100) { this.dir *= -1; this.timer = 0; }
+                }
+                else if (this.type === 'floater') {
+                    this.vy = Math.sin(Date.now() / 200) * 1; // Senoidal
+                    // Perseguir lentamente
+                    let dx = Game.player.x - this.x;
+                    this.vx = dx > 0 ? 1 : -1;
+                    this.grounded = false; // Ignora chão
+                }
+                else if (this.type === 'shooter') {
+                    this.vx = 0;
+                    this.timer++;
+                    if (this.timer > 150) {
+                        // Atirar
+                        let dx = Game.player.x - this.x;
+                        let projectile = new Projectile(this.x, this.y + 10, 15, 15, (dx > 0 ? 4 : -4), 0, '#fa0', false);
+                        Game.currentRoom.projectiles.push(projectile);
+                        this.timer = 0;
+                    }
+                }
+
+                // Dano no player por toque
+                if (checkRectCollision(this, Game.player)) {
+                    Game.player.takeDamage(1);
+                }
+            }
+        }
+
+        /**
+         * BOSS: HORNET
+         */
+        class BossHornet extends Entity {
+            constructor(x, y) {
+                super(x, y, 30, 50, '#d22'); // Vermelho (Hornet)
+                this.maxHp = 250;
+                this.hp = this.maxHp;
+                this.name = "Hornet";
+
+                this.state = 'IDLE';
+                this.stateTimer = 60; // Atraso inicial
+                this.subState = 0;
+
+                this.needle = null; // Objeto da agulha
+                this.staggerCount = 0;
+            }
+
+            takeDamage(amount, dirStr) {
+                if (this.state === 'STAGGER') amount *= 1; // Dano normal (poderia ser critico)
+                this.hp -= amount;
+                this.staggerCount += amount;
+
+                spawnParticles(this.x + this.w / 2, this.y + this.h / 2, '#fff', 3);
+
+                // Trigger Stagger
+                if (this.staggerCount > 40 && this.state !== 'STAGGER') {
+                    this.state = 'STAGGER';
+                    this.stateTimer = 120; // 2 segundos parado
+                    this.staggerCount = 0;
+                }
+
+                if (this.hp <= 0) {
+                    this.dead = true;
+                    Game.victory();
+                }
+            }
+
+            update() {
+                if (this.dead) return;
+
+                // Fase 2: Mais rápida (HP < 50%)
+                let speedMult = (this.hp < this.maxHp * 0.5) ? 1.3 : 1.0;
+
+                // Máquina de Estados
+                this.stateTimer--;
+
+                if (this.state === 'IDLE') {
+                    this.vx = 0;
+                    if (this.stateTimer <= 0) {
+                        this.chooseAttack();
+                    }
+                    // Virar para o player (só se não estiver travada)
+                    if (this.lockFacing <= 0) this.facingRight = Game.player.x > this.x;
+                }
+
+                else if (this.state === 'LUNGE') {
+                    // Investida no chão
+                    if (this.subState === 0) { // Telegraph (Agacha e avisa)
+                        // Som: "SHA!"
+                        if (this.stateTimer <= 0) {
+                            this.subState = 1;
+                            this.stateTimer = 25;
+                            // VELOCIDADE AUMENTADA (Era 12 -> 24) para cruzar a arena
+                            this.vx = this.facingRight ? 24 * speedMult : -24 * speedMult;
+                        }
+                    } else if (this.subState === 1) { // Dash
+                        if (this.stateTimer <= 0) {
+                            this.vx = 0;
+                            this.state = 'IDLE';
+                            this.stateTimer = 30 / speedMult;
+                        }
+                    }
+                    // Hitbox é o próprio corpo
+                }
+
+                else if (this.state === 'AERIAL_LUNGE') {
+                    if (this.subState === 0) { // Pula
+                        this.vy = -12;
+                        this.subState = 1;
+                        this.stateTimer = 20; // Tempo no ar
+                    } else if (this.subState === 1) { // Mira
+                        this.vx = 0;
+                        this.vy = 0; // Flutua brevemente
+                        if (this.stateTimer <= 0) {
+                            this.subState = 2;
+                            // Mira no player
+                            let dx = Game.player.x - this.x;
+                            let dy = Game.player.y - this.y;
+                            let len = Math.sqrt(dx * dx + dy * dy);
+                            // VELOCIDADE AUMENTADA (Era 15 -> 25)
+                            this.vx = (dx / len) * 25 * speedMult;
+                            this.vy = (dy / len) * 25 * speedMult;
+                            this.stateTimer = 30;
+                        }
+                    } else { // Ataca
+                        if (this.grounded || this.stateTimer <= 0) {
+                            this.state = 'IDLE';
+                            this.stateTimer = 40 / speedMult;
+                        }
+                    }
+                }
+
+                else if (this.state === 'NEEDLE_THROW') {
+                    if (this.subState === 0) { // Windup
+                        if (this.stateTimer <= 0) {
+                            this.subState = 1;
+                            // Spawn Needle
+                            let nx = this.facingRight ? this.x + 30 : this.x - 30;
+                            this.needle = {
+                                x: nx, y: this.y + 15, w: 40, h: 10,
+                                vx: this.facingRight ? 12 : -12,
+                                returning: false,
+                                active: true
+                            };
+                            this.stateTimer = 40; // Tempo de ida
+                        }
+                    } else if (this.subState === 1) { // Espera agulha voltar
+                        if (this.stateTimer <= 0 && !this.needle.returning) {
+                            this.needle.returning = true;
+                            this.needle.vx *= -1; // Volta
+                        }
+                        // Se agulha voltou perto
+                        if (this.needle.returning && Math.abs(this.needle.x - this.x) < 20) {
+                            this.needle.active = false;
+                            this.state = 'IDLE';
+                            this.stateTimer = 50 / speedMult;
+                        }
+                    }
+                }
+
+                else if (this.state === 'STORM') {
+                    // Gossamer Storm: Área de dano ao redor
+                    this.vx = 0;
+                    if (this.subState === 0) { // Aviso
+                        // Particulas brancas em volta
+                        spawnParticles(this.x, this.y, '#fff', 2);
+                        if (this.stateTimer <= 0) {
+                            this.subState = 1;
+                            this.stateTimer = 40; // Duração
+                        }
+                    } else { // Dano
+                        // AREA AUMENTADA (Maior e mais alta)
+                        let stormRect = { x: this.x - 110, y: this.y - 80, w: 250, h: 200 };
+                        // Visual
+                        Game.effects.push({ type: 'wire', ...stormRect, life: 2 });
+
+                        if (checkRectCollision(stormRect, Game.player)) {
+                            Game.player.takeDamage(1);
+                        }
+
+                        if (this.stateTimer <= 0) {
+                            this.state = 'IDLE';
+                            this.stateTimer = 60 / speedMult;
+                        }
+                    }
+                }
+
+                else if (this.state === 'STAGGER') {
+                    this.vx = 0;
+                    // Efeito visual de cansada (fumaça preta)
+                    spawnParticles(this.x + Math.random() * 30, this.y + Math.random() * 50, '#000', 1);
+                    if (this.stateTimer <= 0) {
+                        this.state = 'IDLE';
+                        this.stateTimer = 60;
+                        // Grita "GIT GUD!" (Mentira, grita "Hegale!")
+                    }
+                }
+
+                // Lógica da Agulha (se ativa)
+                if (this.needle && this.needle.active) {
+                    this.needle.x += this.needle.vx;
+
+                    // Colisão
+                    if (checkRectCollision(this.needle, Game.player)) {
+                        Game.player.takeDamage(1);
+                    }
+                }
+
+                this.applyPhysics(); // Gravidade básica
+
+                // Dano de contato normal
+                if (this.state !== 'STAGGER' && checkRectCollision(this, Game.player)) {
+                    Game.player.takeDamage(1);
+                }
+            }
+
+            chooseAttack() {
+                let dist = Math.abs(Game.player.x - this.x);
+                let rand = Math.random();
+
+                // Lógica de prioridade
+                if (dist < 80) {
+                    // Muito perto: Storm ou Pulo pra tras
+                    if (rand < 0.6) {
+                        this.state = 'STORM';
+                        this.stateTimer = 30; // Telegraph
+                        this.subState = 0;
+                    } else {
+                        // Pular pra longe
+                        this.vx = this.facingRight ? -8 : 8;
+                        this.vy = -10;
+                        this.state = 'IDLE';
+                        this.stateTimer = 30;
+                    }
+                } else if (dist > 250) {
+                    // Longe: Agulha ou Pulo Aéreo
+                    if (rand < 0.6) {
+                        this.state = 'NEEDLE_THROW';
+                        this.stateTimer = 30;
+                        this.subState = 0;
+                    } else {
+                        this.state = 'AERIAL_LUNGE';
+                        this.stateTimer = 10;
+                        this.subState = 0;
+                    }
+                } else {
+                    // Médio: Lunge ou Aerial
+                    if (rand < 0.5) {
+                        this.state = 'LUNGE';
+                        this.stateTimer = 30;
+                        this.subState = 0;
+                    } else {
+                        this.state = 'AERIAL_LUNGE';
+                        this.stateTimer = 10;
+                        this.subState = 0;
+                    }
+                }
+            }
+
+            draw(ctx) {
+                if (this.dead) return;
+
+                // VISUALIZAÇÃO DE HITBOX (Ataques Visíveis)
+                if (this.state === 'LUNGE' && this.subState === 1) {
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                    ctx.fillRect(this.x, this.y, this.w, this.h);
+                }
+                if (this.state === 'AERIAL_LUNGE' && this.subState === 2) {
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                    ctx.fillRect(this.x, this.y, this.w, this.h);
+                }
+
+                // DESENHAR AGULHA E HITBOX (Needle Throw)
+                if (this.needle && this.needle.active) {
+                    // Linha da agulha
+                    ctx.strokeStyle = '#eee';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 15, this.y + 25);
+                    ctx.lineTo(this.needle.x + (this.needle.vx > 0 ? 0 : 40), this.needle.y + 5);
+                    ctx.stroke();
+
+                    // Corpo da agulha
+                    ctx.fillStyle = '#ddd';
+                    ctx.fillRect(this.needle.x, this.needle.y, this.needle.w, this.needle.h);
+
+                    // HITBOX VISÍVEL
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.3)';
+                    ctx.fillRect(this.needle.x, this.needle.y, this.needle.w, this.needle.h);
+                }
+
+                // Cor muda se stagger
+                ctx.fillStyle = this.state === 'STAGGER' ? '#522' : this.color;
+
+                // Corpo (Vestido)
+                ctx.beginPath();
+                let cx = this.x + this.w / 2;
+                ctx.moveTo(cx, this.y);
+                ctx.lineTo(this.x + this.w, this.y + this.h);
+                ctx.lineTo(this.x, this.y + this.h);
+                ctx.fill();
+
+                // Cabeça (Branca com chifres longos)
+                ctx.fillStyle = '#eee';
+                ctx.beginPath();
+                ctx.ellipse(cx, this.y, 12, 18, 0, 0, Math.PI * 2);
+                ctx.fill();
+                // Chifres
+                ctx.beginPath();
+                ctx.moveTo(cx - 5, this.y - 10);
+                ctx.lineTo(cx - 15, this.y - 35);
+                ctx.lineTo(cx, this.y - 15);
+                ctx.lineTo(cx + 15, this.y - 35);
+                ctx.lineTo(cx + 5, this.y - 10);
+                ctx.fill();
+
+                // Agulha na mão (se não estiver jogando)
+                if (this.state !== 'NEEDLE_THROW' || !this.needle || !this.needle.active) {
+                    ctx.fillStyle = '#ccc';
+                    // Lado que olha
+                    let nx = this.facingRight ? this.x + 20 : this.x - 20;
+                    ctx.fillRect(nx, this.y + 20, 40, 4);
+                }
+            }
+        }
+
+        /**
+         * DEFINIÇÃO DE SALAS
+         */
+        const Rooms = [
+            {
+                id: 0,
+                walls: [
+                    { x: 0, y: 400, w: 800, h: 50 }, // Chão
+                    { x: 0, y: 0, w: 50, h: 450 },   // Parede Esq
+                    { x: 200, y: 300, w: 100, h: 20 },
+                    { x: 400, y: 200, w: 100, h: 20 },
+                    { x: 750, y: 0, w: 50, h: 450 }  // Parede Dir (Saída)
+                ],
+                enemies: [
+                    { type: 'crawler', x: 220, y: 250 },
+                    { type: 'crawler', x: 500, y: 350 }
+                ],
+                transition: { x: 700, y: 0, w: 50, h: 450, target: 1, targetX: 60, targetY: 350 },
+                text: "Z: Pular | X: Atacar | G: Focar (Curar)"
+            },
+            {
+                id: 1, // Sala Vertical + Puzzle
+                walls: [
+                    { x: 0, y: 0, w: 50, h: 450 }, // Parede Entrada
+                    { x: 0, y: 400, w: 200, h: 50 }, // Chão Entrada
+
+                    { x: 200, y: 300, w: 80, h: 20 }, // Plat 1
+                    { x: 350, y: 220, w: 80, h: 20 }, // Plat 2
+                    { x: 500, y: 150, w: 80, h: 20 }, // Plat 3 (Alta)
+                    { x: 250, y: 100, w: 20, h: 20 }, // Plat Item
+
+                    { x: 600, y: 400, w: 200, h: 50 }, // Chão Saída
+                    { x: 750, y: 0, w: 50, h: 450 }    // Parede Saída
+                ],
+                enemies: [
+                    { type: 'floater', x: 400, y: 100 },
+                    { type: 'shooter', x: 650, y: 360 }
+                ],
+                item: { x: 250, y: 70, w: 20, h: 20, type: 'doublejump' },
+                transition: { x: 700, y: 300, w: 50, h: 150, target: 2, targetX: 100, targetY: 350 },
+                text: "Encontre as Asas (Item) para Pulo Duplo"
+            },
+            {
+                id: 2, // Arena Boss
+                walls: [
+                    { x: 0, y: 400, w: 800, h: 50 }, // Chão
+                    { x: 0, y: 0, w: 50, h: 450 },   // Parede Esq
+                    { x: 750, y: 0, w: 50, h: 450 },  // Parede Dir
+                    { x: 0, y: 0, w: 800, h: 50 }    // Teto
+                ],
+                enemies: [], // Boss spawna via script
+                boss: true,
+                text: "Cuidado! Ela é rápida."
+            }
+        ];
+
+        /**
+         * GAME LOOP PRINCIPAL
+         */
+        const Game = {
+            player: null,
+            currentRoom: null,
+            roomIndex: 0,
+            effects: [],
+            shakeTimer: 0,
+            gameState: 'PLAY', // PLAY, TRANSITION, GAMEOVER, WIN
+
+            init() {
+                this.player = new Player(100, 300);
+                this.loadRoom(0);
+                this.loop();
+            },
+
+            loadRoom(index, px, py) {
+                this.roomIndex = index;
+                const data = Rooms[index];
+
+                // Resetar sala
+                this.currentRoom = {
+                    walls: [...data.walls],
+                    enemies: [],
+                    projectiles: [],
+                    transition: data.transition,
+                    item: data.item ? { ...data.item } : null,
+                    text: data.text,
+                    isBoss: !!data.boss
+                };
+
+                // Spawnar inimigos
+                if (data.enemies) {
+                    data.enemies.forEach(e => {
+                        this.currentRoom.enemies.push(new Enemy(e.x, e.y, e.type));
+                    });
+                }
+
+                // Spawnar Boss
+                if (data.boss) {
+                    let boss = new BossHornet(600, 300);
+                    this.currentRoom.enemies.push(boss);
+                    document.getElementById('boss-hp-bar').style.display = 'block';
+                    // Fechar porta atrás (Parede invisivel temporária ou bloqueio)
+                    this.currentRoom.walls.push({ x: 0, y: 0, w: 50, h: 450 }); // Garante fechamento
+                } else {
+                    document.getElementById('boss-hp-bar').style.display = 'none';
+                }
+
+                if (px !== undefined) {
+                    this.player.x = px;
+                    this.player.y = py;
+                }
+
+                // Limpar projéteis antigos
+                this.effects = [];
+            },
+
+            shake(amount) {
+                this.shakeTimer = amount;
+            },
+
+            update() {
+                if (this.gameState !== 'PLAY') return;
+
+                // Player
+                this.player.update();
+
+                // Sala e Transição
+                if (this.currentRoom.transition) {
+                    let t = this.currentRoom.transition;
+                    if (checkRectCollision(this.player, t)) {
+                        this.loadRoom(t.target, t.targetX, t.targetY);
+                        return; // Pula frame pra evitar bugs
+                    }
+                }
+
+                // Item
+                if (this.currentRoom.item) {
+                    let i = this.currentRoom.item;
+                    // Desenhar/Colidir
+                    if (checkRectCollision(this.player, i)) {
+                        if (i.type === 'doublejump') {
+                            this.player.hasDoubleJump = true;
+                            showText("Pulo Duplo Adquirido!", this.player.x, this.player.y - 40);
+                            this.currentRoom.item = null;
+                        }
+                    }
+                }
+
+                // Inimigos e Boss
+                this.currentRoom.enemies.forEach(e => e.update());
+
+                // Projéteis
+                this.currentRoom.projectiles.forEach((p, i) => {
+                    p.update();
+                    if (p.dead) this.currentRoom.projectiles.splice(i, 1);
+                });
+
+                // Efeitos (só visual) e limpeza
+                this.effects = this.effects.filter(e => e.life > 0);
+                particles.forEach((p, i) => {
+                    p.update();
+                    if (p.life <= 0) particles.splice(i, 1);
+                });
+
+                // Atualizar HUD
+                this.updateHUD();
+            },
+
+            draw() {
+                // Limpar e Shake
+                ctx.save();
+                if (this.shakeTimer > 0) {
+                    let dx = (Math.random() - 0.5) * this.shakeTimer;
+                    let dy = (Math.random() - 0.5) * this.shakeTimer;
+                    ctx.translate(dx, dy);
+                    this.shakeTimer--;
+                }
+
+                // Fundo
+                ctx.fillStyle = '#1a1a1d';
+                ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+                // Paredes
+                ctx.fillStyle = '#000';
+                this.currentRoom.walls.forEach(w => ctx.fillRect(w.x, w.y, w.w, w.h));
+
+                // Item
+                if (this.currentRoom.item) {
+                    ctx.fillStyle = '#adf';
+                    let i = this.currentRoom.item;
+                    ctx.fillRect(i.x, i.y, i.w, i.h);
+                    // Brilho
+                    ctx.globalAlpha = 0.5;
+                    ctx.beginPath(); ctx.arc(i.x + 10, i.y + 10, 20 + Math.sin(Date.now() / 200) * 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+
+                // Tutorial Texto
+                if (this.currentRoom.text) {
+                    ctx.fillStyle = '#555';
+                    ctx.font = '20px monospace';
+                    ctx.fillText(this.currentRoom.text, 200, 100);
+                }
+
+                // Entidades
+                this.currentRoom.enemies.forEach(e => e.draw(ctx));
+                this.player.draw(ctx);
+                this.currentRoom.projectiles.forEach(p => p.draw(ctx));
+
+                // Partículas
+                particles.forEach(p => p.draw(ctx));
+
+                // Efeitos (Slash, etc)
+                this.effects.forEach(e => {
+                    e.life--;
+                    if (e.type === 'slash') {
+                        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)'; // Mais transparente
+                        ctx.fillRect(e.x, e.y, e.w, e.h); // Retângulo (Slash linear)
+                    }
+                    if (e.type === 'wire') {
+                        ctx.strokeStyle = '#eee';
+                        ctx.lineWidth = 1;
+                        for (let i = 0; i < 5; i++) {
+                            ctx.beginPath();
+                            ctx.moveTo(e.x + Math.random() * e.w, e.y);
+                            ctx.lineTo(e.x + Math.random() * e.w, e.y + e.h);
+                            ctx.stroke();
+                        }
+                    }
+                });
+
+                // Game Over Overlay
+                if (this.gameState === 'GAMEOVER') {
+                    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                    ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '40px monospace';
+                    ctx.fillText("VOCÊ MORREU", 280, 200);
+                    ctx.font = '20px monospace';
+                    ctx.fillText("Pressione F5 para Reiniciar", 260, 240);
+                }
+
+                if (this.gameState === 'WIN') {
+                    ctx.fillStyle = 'rgba(255,255,255,0.2)';
+                    ctx.fillRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '40px monospace';
+                    ctx.fillText("GUARDIÃ DERROTADA", 220, 200);
+                }
+
+                // Textos Flutuantes
+                texts = texts.filter(t => t.duration > 0);
+                texts.forEach(t => {
+                    t.duration--;
+                    t.y -= 0.5;
+                    ctx.fillStyle = '#fff';
+                    ctx.font = '16px monospace';
+                    ctx.fillText(t.str, t.x, t.y);
+                });
+
+                ctx.restore();
+            },
+
+            updateHUD() {
+                let hpStr = "VIDA: ";
+                for (let i = 0; i < this.player.maxHp; i++) {
+                    hpStr += i < this.player.hp ? "♥" : "♡";
+                }
+                document.getElementById('health-display').innerText = hpStr;
+                document.getElementById('soul-display').innerText = `ALMA: ${this.player.soul}%`;
+
+                // Boss HP
+                if (this.currentRoom.isBoss && this.currentRoom.enemies.length > 0) {
+                    let boss = this.currentRoom.enemies[0];
+                    let pct = Math.max(0, (boss.hp / boss.maxHp) * 100);
+                    document.getElementById('boss-hp-fill').style.width = pct + "%";
+                }
+            },
+
+            gameOver() {
+                this.gameState = 'GAMEOVER';
+            },
+
+            victory() {
+                this.gameState = 'WIN';
+                // Congelar jogo e efeito
+                setTimeout(() => {
+                    alert("Parabéns! Você venceu o desafio.");
+                }, 1000);
+            },
+
+            loop() {
+                Game.update();
+                Game.draw();
+                requestAnimationFrame(Game.loop);
+            }
+        };
+
+        // Iniciar
+        window.onload = () => Game.init();
+
+    </script>
+</body>
+
+</html>

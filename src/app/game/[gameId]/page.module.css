@@ -49,7 +49,7 @@
 
 .contentGrid {
   display: grid;
-  grid-template-columns: 350px 1fr; /* Coluna fixa para a capa, resto flexível */
+  grid-template-columns: 350px 1fr;
   gap: 3rem;
   align-items: start;
 }
@@ -57,13 +57,13 @@
 /* --- COLUNA ESQUERDA (POSTER) --- */
 .leftColumn {
   position: sticky;
-  top: 2rem; /* Mantém a capa visível ao rolar */
+  top: 2rem;
 }
 
 .posterWrapper {
   position: relative;
   width: 100%;
-  aspect-ratio: 9 / 16; /* Formato Capa/Poster */
+  aspect-ratio: 9 / 16;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0,0,0,0.6);
@@ -96,13 +96,8 @@
   margin-bottom: 0;
 }
 
-.metaItem span {
-  color: #888;
-}
-
-.metaItem strong {
-  color: #fff;
-}
+.metaItem span { color: #888; }
+.metaItem strong { color: #fff; }
 
 /* --- COLUNA DIREITA (DETALHES) --- */
 .rightColumn {
@@ -118,7 +113,6 @@
   text-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
-/* Rating Header */
 .ratingHeader {
   display: flex;
   align-items: center;
@@ -156,6 +150,13 @@
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
+/* Container dos botões (Compra + Wishlist) */
+.actionButtons {
+  display: flex;
+  align-items: center;
+  gap: 1rem; /* Espaço entre o coração e o botão */
+}
+
 .price {
   font-size: 2rem;
   font-weight: 700;
@@ -164,7 +165,7 @@
 
 .ownedLabel {
   font-size: 1.2rem;
-  color: #4caf50; /* Verde */
+  color: #4caf50;
   font-weight: bold;
   background: rgba(76, 175, 80, 0.1);
   padding: 0.5rem 1rem;
@@ -190,7 +191,7 @@
 }
 
 .btnPlay {
-  background-color: #7000ff; /* Roxo Mythic */
+  background-color: #7000ff;
   color: #fff;
   text-decoration: none;
   padding: 1rem 3rem;
@@ -201,9 +202,7 @@
   text-align: center;
 }
 
-.btnPlay:hover {
-  background-color: #8a2be2;
-}
+.btnPlay:hover { background-color: #8a2be2; }
 
 .btnSecondary {
   background-color: transparent;
@@ -216,9 +215,7 @@
   transition: all 0.2s;
 }
 
-.btnSecondary:hover {
-  background-color: rgba(112, 0, 255, 0.1);
-}
+.btnSecondary:hover { background-color: rgba(112, 0, 255, 0.1); }
 
 .btnDisabled {
   background-color: #333;
@@ -229,7 +226,6 @@
   cursor: not-allowed;
 }
 
-/* Descrição */
 .divider {
   height: 1px;
   background-color: #333;
@@ -248,10 +244,9 @@
   line-height: 1.7;
   color: #ccc;
   margin-bottom: 3rem;
-  white-space: pre-line; /* Respeita quebras de linha */
+  white-space: pre-line;
 }
 
-/* User Review Section */
 .userReviewSection {
   background: #151515;
   padding: 2rem;
@@ -260,9 +255,7 @@
   text-align: center;
 }
 
-.userReviewSection h3 {
-  margin-bottom: 0.5rem;
-}
+.userReviewSection h3 { margin-bottom: 0.5rem; }
 
 .userRatingWrapper {
   display: flex;
@@ -277,7 +270,6 @@
   color: #7000ff;
 }
 
-/* Estrelas */
 .starsContainer {
   display: flex;
   gap: 4px;
@@ -291,32 +283,18 @@
   transition: transform 0.1s;
 }
 
-.starButton:active {
-  transform: scale(0.8);
-}
+.starButton:active { transform: scale(0.8); }
 
-/* Responsividade */
 @media (max-width: 900px) {
-  .contentGrid {
-    grid-template-columns: 1fr;
-  }
-  
+  .contentGrid { grid-template-columns: 1fr; }
   .leftColumn {
     position: relative;
     top: 0;
     max-width: 400px;
     margin: 0 auto;
   }
-  
-  .title {
-    font-size: 2.5rem;
-    text-align: center;
-  }
-
-  .ratingHeader {
-    justify-content: center;
-  }
-
+  .title { font-size: 2.5rem; text-align: center; }
+  .ratingHeader { justify-content: center; }
   .actionCard {
     flex-direction: column;
     gap: 1.5rem;

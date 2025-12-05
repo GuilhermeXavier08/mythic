@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react'; // Adicione Suspense
-import { useSearchParams } from 'next/navigation'; // Adicione useSearchParams
+import { useState, useEffect, useMemo, Suspense } from 'react'; 
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import styles from './page.module.css';
@@ -31,7 +31,7 @@ interface Game {
 }
 
 function StoreContent() {
-  const searchParams = useSearchParams(); // <-- HOOK PARA LER URL
+  const searchParams = useSearchParams();
   
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,11 +44,10 @@ function StoreContent() {
   const [minRating, setMinRating] = useState(0);
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
 
-  // --- EFEITO PARA LER O GÊNERO DA URL ---
+  // EFEITO PARA LER O GÊNERO DA URL
   useEffect(() => {
     const genreParam = searchParams.get('genre');
     if (genreParam) {
-      // Se tiver ?genre=ACAO na url, já seleciona ele
       setSelectedGenres([genreParam]);
     }
   }, [searchParams]);
@@ -70,7 +69,7 @@ function StoreContent() {
     fetchGames();
   }, []);
 
-  // Lógica de Filtragem (Mantida igual)
+  // Lógica de Filtragem
   const filteredGames = useMemo(() => {
     return games.filter((game) => {
       const matchesName = game.title.toLowerCase().includes(searchTerm.toLowerCase());
@@ -100,8 +99,6 @@ function StoreContent() {
       <div className={styles.pageHeader}>
         <h1 className={styles.title}>Explorar Loja</h1>
         <p className={styles.subtitle}>{filteredGames.length} jogos encontrados</p>
-          <h1 className={styles.title}>Explorar Loja</h1>
-          <p className={styles.subtitle}>{filteredGames.length} jogos encontrados</p>
       </div>
 
       <div className={styles.storeLayout}>
@@ -110,20 +107,13 @@ function StoreContent() {
         <aside className={styles.filtersColumn}>
           <div className={styles.filtersHeader}>
             <h3>Filtros</h3>
-            <button
+            <button 
               className={styles.clearButton}
               onClick={() => {
                 setSearchTerm(''); setMinPrice(''); setMaxPrice('');
                 setMinRating(0); setSelectedGenres([]);
+                window.history.pushState(null, '', '/store');
               }}
-            <button 
-                className={styles.clearButton}
-                onClick={() => {
-                  setSearchTerm(''); setMinPrice(''); setMaxPrice('');
-                  setMinRating(0); setSelectedGenres([]);
-                  // Opcional: Limpar URL
-                  window.history.pushState(null, '', '/store');
-                }}
             >
               Limpar
             </button>
@@ -196,21 +186,12 @@ function StoreContent() {
             <div className={styles.grid}>
               {filteredGames.length > 0 ? (
                 filteredGames.map((game) => (
-                  /* --- MUDANÇA AQUI: CONSTRUÇÃO MANUAL DO CARD --- */
-                  /* Isso elimina o conflito de CSS e o piscar */
-                  <Link
-                    key={game.id}
-                    href={`/game/${game.id}`}
-                    className={styles.cardWrapper}
-                  >
-                    {/* Imagem de Fundo */}
-                    <Image
-                      src={game.imageUrl}
                   <Link 
                     key={game.id} 
                     href={`/game/${game.id}`} 
                     className={styles.cardWrapper}
                   >
+                    {/* Imagem de Fundo */}
                     <Image 
                       src={game.imageUrl} 
                       alt={game.title}
@@ -220,7 +201,6 @@ function StoreContent() {
                     />
 
                     {/* Overlay de Informação */}
-                    
                     <div className={styles.cardOverlay}>
                       <span className={styles.cardTitle}>{game.title}</span>
                       <span className={styles.cardPrice}>
@@ -238,6 +218,7 @@ function StoreContent() {
           )}
         </section>
       </div>
+
       <footer className={styles.footer}>
         <p>&copy; 2024 Mythic Store. Todos os direitos reservados.</p>
       </footer>
@@ -245,7 +226,7 @@ function StoreContent() {
   );
 }
 
-// 3. EXPORTAR COM SUSPENSE (Importante para evitar erros de build com useSearchParams)
+// 3. EXPORTAR COM SUSPENSE
 export default function StorePage() {
   return (
     <NonAdminGuard>

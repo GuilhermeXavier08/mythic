@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import styles from './page.module.css';
+import styles from './page.module.css'; // O arquivo CSS deve ter este nome
 import AdminGuard from '@/components/AdminGuard';
 
 function DashboardContent() {
@@ -14,7 +14,7 @@ function DashboardContent() {
     pendingGames: 0,
     activeUsers: 0,
     revenue: 0,
-    totalSales: 0 // <--- Novo Estado
+    totalSales: 0 
   });
 
   const [loading, setLoading] = useState(true);
@@ -24,21 +24,29 @@ function DashboardContent() {
       if (!token) return;
       
       try {
+        // Tenta buscar da API real
         const response = await fetch('/api/admin/stats', {
           headers: { Authorization: `Bearer ${token}` } 
         });
         
-        if (!response.ok) throw new Error('Falha ao buscar estatísticas');
-
-        const data = await response.json();
-
-        setStats({
-          totalGames: data.totalGames,
-          pendingGames: data.pendingGames,
-          activeUsers: data.activeUsers,
-          revenue: data.revenue,
-          totalSales: data.totalSales // <--- Pegando da API
-        });
+        if (response.ok) {
+          const data = await response.json();
+          setStats({
+            totalGames: data.totalGames || 0,
+            pendingGames: data.pendingGames || 0,
+            activeUsers: data.activeUsers || 0,
+            revenue: data.revenue || 0,
+            totalSales: data.totalSales || 0
+          });
+        } else {
+          // Fallback silencioso ou tratamento de erro se a API de stats não existir ainda
+          console.warn('API de stats não retornou 200, usando dados parciais.');
+          
+          // Exemplo: Buscar apenas jogos pendentes para preencher pelo menos isso
+          const resPending = await fetch('/api/admin/games', { headers: { Authorization: `Bearer ${token}` } });
+          const pendingData = resPending.ok ? await resPending.json() : [];
+          setStats(prev => ({ ...prev, pendingGames: pendingData.length }));
+        }
 
       } catch (error) {
         console.error("Erro ao carregar estatísticas", error);
@@ -55,7 +63,7 @@ function DashboardContent() {
       <header className={styles.header}>
         <div>
           <h1 className={styles.title}>Visão Geral</h1>
-          <p className={styles.subtitle}>Bem-vindo de volta, <span className={styles.highlight}>{user?.username}</span>.</p>
+          <p className={styles.subtitle}>Bem-vindo de volta, <span className={styles.highlight}>{user?.username || 'Admin'}</span>.</p>
         </div>
         <div className={styles.dateBadge}>
           {new Date().toLocaleDateString('pt-BR', { dateStyle: 'full' })}
@@ -77,7 +85,7 @@ function DashboardContent() {
           <span className={`${styles.trend} ${styles.up}`}>Vendas totais</span>
         </div>
 
-        {/* --- NOVO CARD: TOTAL VENDIDO --- */}
+        {/* Card 2: Total Vendido */}
         <div className={styles.kpiCard}>
           <div className={styles.kpiHeader}>
              <span className={styles.icon}>🛒</span>
@@ -88,7 +96,6 @@ function DashboardContent() {
           </div>
           <span className={styles.trend}>Cópias comercializadas</span>
         </div>
-        {/* ------------------------------- */}
 
         {/* Card 3: Jogos na Loja */}
         <div className={styles.kpiCard}>

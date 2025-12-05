@@ -1,4 +1,3 @@
-// src/app/page.tsx
 'use client';
 
 import { useAuth } from '@/context/AuthContext';
@@ -17,7 +16,7 @@ interface Game {
 }
 
 export default function Home() {
-  const { isAdmin, isLoading: isAuthLoading } = useAuth(); // removi 'user' que não estava usando
+  const { isAdmin, isLoading: isAuthLoading } = useAuth();
   const router = useRouter(); 
   
   const [featuredGames, setFeaturedGames] = useState<Game[]>([]);
@@ -38,7 +37,8 @@ export default function Home() {
           const response = await fetch('/api/games');
           if (!response.ok) throw new Error('Falha ao carregar jogos');
           const data = await response.json();
-          setFeaturedGames(data.slice(0, 4));
+          // Pega apenas os 4 primeiros para a home
+          setFeaturedGames(data.slice(0, 8));
         } catch (error) {
           console.error(error);
         } finally {
@@ -60,10 +60,10 @@ export default function Home() {
     );
   }
 
+  // Se for Admin, não renderiza nada (o useEffect vai redirecionar)
   if (isAdmin) {
     return null; 
   }
-  if (isAdmin) return null; 
 
   return (
     <main className={styles.main}>
@@ -79,11 +79,10 @@ export default function Home() {
         <div className={styles.heroOverlay}></div>
       </section>
 
-      {/* --- CATEGORIAS POPULARES (COM LINKS CORRIGIDOS) --- */}
+      {/* --- CATEGORIAS POPULARES --- */}
       <section className={styles.categoriesSection}>
          <h2 className={styles.sectionTitleCenter}>Navegue por Gênero</h2>
          <div className={styles.categoriesGrid}>
-            {/* Adicionamos ?genre=VALOR em cada link */}
             <Link href="/store?genre=ACAO" className={styles.categoryCard}>
                <FaGamepad size={30} />
                <span>Ação</span>
@@ -123,6 +122,7 @@ export default function Home() {
                   href={`/game/${game.id}`} 
                   className={styles.cardWrapper}
                 >
+                  {/* IMAGEM CORRIGIDA */}
                   <Image 
                     src={game.imageUrl} 
                     alt={game.title}
@@ -131,8 +131,7 @@ export default function Home() {
                     className={styles.cardImage}
                   />
 
-                    className={styles.cardImage} 
-                  />
+                  {/* OVERLAY */}
                   <div className={styles.cardOverlay}>
                     <span className={styles.cardTitle}>{game.title}</span>
                     <span className={styles.cardPrice}>

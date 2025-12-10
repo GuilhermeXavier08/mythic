@@ -14,7 +14,7 @@ function CheckoutContent() {
   const { 
     items, 
     totalPrice, 
-    totalWithDiscount, 
+    totalWithDiscount, // Vamos usar isso para saber se é grátis
     coupon, 
     clearCart,
     isLoading: isCartLoading 
@@ -27,12 +27,15 @@ function CheckoutContent() {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  // --- NOVOS STATES PARA O CARTÃO ---
+  // States do Cartão
   const [cardName, setCardName] = useState('');
   const [cardNumber, setCardNumber] = useState('');
   const [expiry, setExpiry] = useState('');
   const [cvv, setCvv] = useState('');
-  // ----------------------------------
+
+  // --- MUDANÇA 1: Variável auxiliar para verificar se é grátis ---
+  const isFree = totalWithDiscount === 0;
+  // -------------------------------------------------------------
 
   useEffect(() => {
     if (!isCartLoading && items.length === 0 && !success) {
@@ -40,7 +43,6 @@ function CheckoutContent() {
     }
   }, [isCartLoading, items, router, success]);
 
-  // Função auxiliar para formatar cartão (apenas visual)
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, '');
     if (value.length > 16) value = value.slice(0, 16);
@@ -48,14 +50,17 @@ function CheckoutContent() {
   };
 
   const handleFinishPurchase = async (e: React.FormEvent) => {
-    e.preventDefault(); // Evita reload do form
+    e.preventDefault();
     if (!token) return;
     
-    // Validação Simples Frontend
-    if (cardNumber.length < 16 || cvv.length < 3 || !cardName || !expiry) {
-        setError('Por favor, preencha os dados do cartão (fictícios) corretamente.');
-        return;
+    // --- MUDANÇA 2: Só valida o cartão se NÃO for grátis ---
+    if (!isFree) {
+        if (cardNumber.length < 16 || cvv.length < 3 || !cardName || !expiry) {
+            setError('Por favor, preencha os dados do cartão (fictícios) corretamente.');
+            return;
+        }
     }
+    // ------------------------------------------------------
 
     setIsProcessing(true);
     setError('');
@@ -69,13 +74,14 @@ function CheckoutContent() {
         },
         body: JSON.stringify({ 
             couponCode: coupon ? coupon.code : null,
-            // Enviamos os dados para serem criptografados no backend
-            paymentData: {
+            // --- MUDANÇA 3: Envia null se for grátis ---
+            paymentData: isFree ? null : {
                 cardName,
                 cardNumber,
                 expiry,
                 cvv
             }
+            // -------------------------------------------
         })
       });
 
@@ -103,7 +109,10 @@ function CheckoutContent() {
     return (
       <main className={styles.container} style={{ textAlign: 'center', marginTop: '5rem' }}>
         <h1 style={{ color: '#4ade80', fontSize: '2rem', marginBottom: '1rem' }}>Compra Realizada com Sucesso!</h1>
-        <p style={{ color: '#ccc', fontSize: '1.2rem' }}>Pagamento processado e dados criptografados.</p>
+        <p style={{ color: '#ccc', fontSize: '1.2rem' }}>
+            {/* Texto dinâmico */}
+            {isFree ? 'Jogos adicionados à biblioteca.' : 'Pagamento processado e dados criptografados.'}
+        </p>
         <p style={{ color: '#888', marginTop: '2rem' }}>Redirecionando...</p>
       </main>
     );
@@ -117,67 +126,71 @@ function CheckoutContent() {
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '2rem' }}>
         
-        {/* ESQUERDA: Formulário de Pagamento e Itens */}
+        {/* ESQUERDA */}
         <div>
-           {/* SEÇÃO DE PAGAMENTO (NOVA) */}
-           <div style={{ background: '#1a1a1a', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333', marginBottom: '2rem' }}>
-              <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#7000ff' }}>Dados de Pagamento (Simulação)</h2>
-              <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '1rem' }}>
-                  Não use dados reais. Utilize números aleatórios. Tudo será criptografado.
-              </p>
-              
-              <form id="checkout-form" onSubmit={handleFinishPurchase} style={{ display: 'grid', gap: '1rem' }}>
-                  <div>
-                      <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Nome no Cartão</label>
-                      <input 
-                        type="text" 
-                        placeholder="Ex: JOAO DA SILVA"
-                        value={cardName}
-                        onChange={(e) => setCardName(e.target.value)}
-                        style={{ width: '100%', padding: '10px', background: '#252525', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
-                        required
-                      />
-                  </div>
-                  <div>
-                      <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Número do Cartão (16 dígitos)</label>
-                      <input 
-                        type="text" 
-                        placeholder="0000 0000 0000 0000"
-                        maxLength={16}
-                        value={cardNumber}
-                        onChange={handleCardNumberChange}
-                        style={{ width: '100%', padding: '10px', background: '#252525', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
-                        required
-                      />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+           {/* --- MUDANÇA 4: Renderização Condicional do Formulário --- */}
+           {/* Se isFree for true, essa div inteira não aparece */}
+           {!isFree && (
+               <div style={{ background: '#1a1a1a', padding: '1.5rem', borderRadius: '8px', border: '1px solid #333', marginBottom: '2rem' }}>
+                  <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#7000ff' }}>Dados de Pagamento (Simulação)</h2>
+                  <p style={{ fontSize: '0.8rem', color: '#666', marginBottom: '1rem' }}>
+                      Não use dados reais. Utilize números aleatórios. Tudo será criptografado.
+                  </p>
+                  
+                  <form id="checkout-form" onSubmit={handleFinishPurchase} style={{ display: 'grid', gap: '1rem' }}>
                       <div>
-                          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Validade</label>
+                          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Nome no Cartão</label>
                           <input 
                             type="text" 
-                            placeholder="MM/AA"
-                            maxLength={5}
-                            value={expiry}
-                            onChange={(e) => setExpiry(e.target.value)}
+                            placeholder="Ex: JOAO DA SILVA"
+                            value={cardName}
+                            onChange={(e) => setCardName(e.target.value)}
                             style={{ width: '100%', padding: '10px', background: '#252525', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
-                            required
+                            required={!isFree} // Só é required se não for grátis
                           />
                       </div>
                       <div>
-                          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem' }}>CVV</label>
+                          <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Número do Cartão</label>
                           <input 
                             type="text" 
-                            placeholder="123"
-                            maxLength={4}
-                            value={cvv}
-                            onChange={(e) => setCvv(e.target.value)}
+                            placeholder="0000 0000 0000 0000"
+                            maxLength={16}
+                            value={cardNumber}
+                            onChange={handleCardNumberChange}
                             style={{ width: '100%', padding: '10px', background: '#252525', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
-                            required
+                            required={!isFree}
                           />
                       </div>
-                  </div>
-              </form>
-           </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                          <div>
+                              <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem' }}>Validade</label>
+                              <input 
+                                type="text" 
+                                placeholder="MM/AA"
+                                maxLength={5}
+                                value={expiry}
+                                onChange={(e) => setExpiry(e.target.value)}
+                                style={{ width: '100%', padding: '10px', background: '#252525', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
+                                required={!isFree}
+                              />
+                          </div>
+                          <div>
+                              <label style={{ display: 'block', fontSize: '0.9rem', marginBottom: '0.5rem' }}>CVV</label>
+                              <input 
+                                type="text" 
+                                placeholder="123"
+                                maxLength={4}
+                                value={cvv}
+                                onChange={(e) => setCvv(e.target.value)}
+                                style={{ width: '100%', padding: '10px', background: '#252525', border: '1px solid #444', color: 'white', borderRadius: '4px' }}
+                                required={!isFree}
+                              />
+                          </div>
+                      </div>
+                  </form>
+               </div>
+           )}
+           {/* -------------------------------------------------------- */}
 
           <h2 style={{ fontSize: '1.2rem', marginBottom: '1rem', color: '#ccc' }}>Itens do Pedido</h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -229,8 +242,9 @@ function CheckoutContent() {
           {error && <p style={{ color: '#ff4d4d', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</p>}
 
           <button 
-            type="submit"
-            form="checkout-form" // Vincula este botão ao form lá de cima
+            type={isFree ? "button" : "submit"} // Se for grátis é button normal, se não é submit do form
+            onClick={isFree ? handleFinishPurchase : undefined} // Se for grátis chama direto
+            form={!isFree ? "checkout-form" : undefined}
             disabled={isProcessing}
             style={{
               width: '100%', padding: '1rem', background: '#7000ff', border: 'none',
@@ -238,7 +252,7 @@ function CheckoutContent() {
               cursor: isProcessing ? 'not-allowed' : 'pointer', opacity: isProcessing ? 0.7 : 1
             }}
           >
-            {isProcessing ? 'Criptografando e Processando...' : 'Confirmar Pagamento'}
+            {isProcessing ? 'Processando...' : (isFree ? 'Confirmar Resgate' : 'Confirmar Pagamento')}
           </button>
           
           <Link href="/cart" style={{ display: 'block', textAlign: 'center', marginTop: '1rem', color: '#888', fontSize: '0.9rem' }}>

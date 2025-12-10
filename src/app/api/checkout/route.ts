@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 import { awardBadge } from '@/lib/gamification';
-import { encrypt } from '@/lib/crypto'; // <--- IMPORTAMOS A CRIPTOGRAFIA
+import { encrypt } from '@/lib/crypto'; 
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta';
 
@@ -29,14 +29,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    // --- MUDANÇA: Recebemos também os dados do cartão ---
     const { couponCode, paymentData } = await request.json();
-
-    // Validação básica se os dados vieram (mesmo sendo fake)
-    if (!paymentData || !paymentData.cardNumber || !paymentData.cvv) {
-        return NextResponse.json({ error: 'Dados de pagamento incompletos' }, { status: 400 });
-    }
-    // ----------------------------------------------------
 
     const cart = await prisma.cart.findUnique({
       where: { userId },
@@ -51,7 +44,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Seu carrinho está vazio' }, { status: 400 });
     }
 
-    // Lógica de Cupom (MANTIDA IGUAL)
+    // --- CÁLCULO DE PREÇO E CUPOM (MOVIDO PARA CIMA) ---
+    // Precisamos saber o total ANTES de validar o pagamento
     let discountMultiplier = 1; 
     let couponIdToUpdate = null;
 
@@ -78,6 +72,22 @@ export async function POST(request: Request) {
              }
         }
     }
+
+    // Calcular o total final para saber se é Grátis
+    const rawTotal = cart.items.reduce((acc, item) => acc + item.game.price, 0);
+    const finalTotal = rawTotal * discountMultiplier;
+    
+    // Consideramos grátis se for menor que 1 centavo
+    const isFree = finalTotal < 0.01; 
+
+    // --- VALIDAÇÃO CONDICIONAL ---
+    // Se NÃO for grátis, exigimos os dados
+    if (!isFree) {
+        if (!paymentData || !paymentData.cardNumber || !paymentData.cvv) {
+            return NextResponse.json({ error: 'Dados de pagamento incompletos' }, { status: 400 });
+        }
+    }
+    // ----------------------------
 
     const purchaseData = cart.items.map((item) => {
         const originalPrice = item.game.price;
@@ -122,18 +132,18 @@ export async function POST(request: Request) {
         });
       }
 
-      // 5. --- NOVO: SALVAR DADOS CRIPTOGRAFADOS DO CARTÃO ---
-      // Nunca salvamos cartão real, mas como é fake e o requisito pede:
-      await tx.paymentLog.create({
-        data: {
-            userId: userId,
-            encryptedCardName: encrypt(paymentData.cardName),
-            encryptedCardNumber: encrypt(paymentData.cardNumber), // Criptografado!
-            encryptedCVV: encrypt(paymentData.cvv),               // Criptografado!
-            encryptedExpiry: encrypt(paymentData.expiry)
-        }
-      });
-      // -----------------------------------------------------
+      // 5. SALVAR DADOS CRIPTOGRAFADOS (APENAS SE NÃO FOR GRÁTIS)
+      if (!isFree && paymentData) {
+        await tx.paymentLog.create({
+            data: {
+                userId: userId,
+                encryptedCardName: encrypt(paymentData.cardName),
+                encryptedCardNumber: encrypt(paymentData.cardNumber),
+                encryptedCVV: encrypt(paymentData.cvv),
+                encryptedExpiry: encrypt(paymentData.expiry)
+            }
+        });
+      }
     });
 
     await awardBadge(userId, 'FIRST_BUY');

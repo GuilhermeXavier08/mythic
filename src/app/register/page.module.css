@@ -1,5 +1,3 @@
-/* src/app/register/page.module.css */
-
 .page {
   display: flex;
   flex-grow: 1;
@@ -11,7 +9,7 @@
 
 .contentWrapper {
   display: flex;
-  flex-wrap: wrap; /* Ordem normal, o form já vem primeiro no HTML */
+  flex-wrap: wrap; 
   align-items: center;
   justify-content: center;
   gap: 5rem;
@@ -40,7 +38,6 @@
 }
 
 /* --- Coluna da Esquerda (Formulário) --- */
-/* Wrapper para conter a msg de sucesso e o form */
 .formWrapper {
   flex-basis: 450px;
   flex-grow: 1;
@@ -94,10 +91,49 @@
   box-shadow: 0 0 0 3px rgba(147, 51, 234, 0.3);
 }
 
+/* --- CHECKBOX E TERMOS --- */
+.checkboxGroup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
+.checkboxLabel {
+  font-size: 0.9rem;
+  color: #ccc;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.termLink {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--primary-color);
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: inherit;
+  font-weight: 600;
+}
+
+.termLink:hover {
+  color: var(--secondary-color);
+}
+
+/* --- BOTÃO REGISTRAR --- */
 .button {
   width: 100%;
   padding: 0.9rem;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
   background-color: var(--primary-color);
   color: #FFFFFF;
   border: none;
@@ -109,12 +145,23 @@
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-.button:hover {
+.button:hover:not(:disabled) {
   background-color: var(--secondary-color);
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
+/* Estilo para botão desabilitado */
+.button:disabled {
+  background-color: #555;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+  opacity: 0.7;
+}
+
+/* --- MENSAGENS --- */
 .message {
   text-align: center;
   padding: 0.8rem;
@@ -130,7 +177,7 @@
 .success {
   background-color: #86efac;
   color: #14532d;
-  margin-bottom: 1.5rem; /* Espaço entre a msg e o form (que some) */
+  margin-bottom: 1.5rem;
 }
 
 .link {
@@ -145,4 +192,92 @@
 .link:hover {
   color: var(--secondary-color);
   text-decoration: underline;
+}
+
+/* --- MODAL DE TERMOS --- */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.modalContent {
+  background-color: #2a2a2a;
+  padding: 2rem;
+  border-radius: 12px;
+  border: 1px solid #444;
+  max-width: 600px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.modalTitle {
+  color: #fff;
+  margin-bottom: 1.5rem;
+  font-size: 1.5rem;
+  border-bottom: 1px solid #444;
+  padding-bottom: 1rem;
+}
+
+.modalBody {
+  color: #ddd;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+}
+
+.modalBody h4 {
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.modalCloseButton {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  margin-right: 1rem;
+  transition: background 0.2s;
+}
+
+.modalCloseButton:hover {
+  background-color: var(--secondary-color);
+}
+
+.modalCancelButton {
+  background-color: transparent;
+  border: 1px solid #555;
+  color: #ccc;
+  padding: 0.8rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.2s;
+}
+
+.modalCancelButton:hover {
+  background-color: #444;
+  color: #fff;
 }

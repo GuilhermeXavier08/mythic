@@ -1,4 +1,3 @@
-// src/app/register/page.tsx
 /* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
@@ -11,12 +10,24 @@ export default function RegisterPage() {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // Novos estados para o LGPD
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const router = useRouter();
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    
+    // Dupla verificação de segurança
+    if (!acceptedTerms) {
+      setError("Você precisa aceitar os termos para continuar.");
+      return;
+    }
+
     setError(null);
     setSuccess(null);
 
@@ -42,17 +53,52 @@ export default function RegisterPage() {
         router.push('/login');
       }, 3000);
 
-    // --- CORREÇÃO AQUI ---
-    // Estava "} catch (error: any) ="
-    // O correto é "} catch (error: any) {"
     } catch (error: any) { 
       setError(error.message);
     }
-    // --- FIM DA CORREÇÃO ---
   };
 
   return (
     <div className={styles.page}>
+      
+      {/* MODAL LGPD */}
+      {showTermsModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowTermsModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Termos de Uso e Privacidade (LGPD)</h3>
+            <div className={styles.modalBody}>
+              <p>Bem-vindo à Mythic Store. Valorizamos sua privacidade e estamos comprometidos em proteger seus dados pessoais em conformidade com a Lei Geral de Proteção de Dados (LGPD - Lei nº 13.709/2018).</p>
+              <br/>
+              <h4>1. Coleta de Dados</h4>
+              <p>Coletamos apenas os dados necessários para o funcionamento da plataforma: Nome de usuário, E-mail e Senha (criptografada).</p>
+              <br/>
+              <h4>2. Finalidade</h4>
+              <p>Seus dados são utilizados exclusivamente para autenticação, segurança da conta e personalização da sua experiência na loja.</p>
+              <br/>
+              <h4>3. Seus Direitos</h4>
+              <p>Você tem direito a acessar, corrigir ou solicitar a exclusão de seus dados a qualquer momento através das configurações da conta.</p>
+              <br/>
+              <p>Ao clicar em "Aceitar", você concorda com o processamento de seus dados conforme descrito.</p>
+            </div>
+            <button 
+              className={styles.modalCloseButton} 
+              onClick={() => {
+                setAcceptedTerms(true);
+                setShowTermsModal(false);
+              }}
+            >
+              Li e Aceito
+            </button>
+            <button 
+              className={styles.modalCancelButton} 
+              onClick={() => setShowTermsModal(false)}
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className={styles.contentWrapper}>
 
         {/* Formulário primeiro (esquerda) */}
@@ -95,7 +141,39 @@ export default function RegisterPage() {
                   required
                 />
               </div>
-              <button type="submit" className={styles.button}>Registrar</button>
+
+              {/* --- CHECKBOX LGPD --- */}
+              <div className={styles.checkboxGroup}>
+                <input 
+                  type="checkbox" 
+                  id="lgpd-check" 
+                  className={styles.checkbox}
+                  checked={acceptedTerms}
+                  onChange={(e) => setAcceptedTerms(e.target.checked)}
+                />
+                <label htmlFor="lgpd-check" className={styles.checkboxLabel}>
+                  Li e concordo com os{' '}
+                  <button 
+                    type="button" 
+                    className={styles.termLink}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setShowTermsModal(true);
+                    }}
+                  >
+                    Termos de Uso e Privacidade (LGPD)
+                  </button>
+                </label>
+              </div>
+
+              <button 
+                type="submit" 
+                className={styles.button} 
+                disabled={!acceptedTerms} // Desabilita se não aceitou
+                title={!acceptedTerms ? "Aceite os termos para continuar" : ""}
+              >
+                Registrar
+              </button>
 
               {error && <p className={`${styles.message} ${styles.error}`}>{error}</p>}
               

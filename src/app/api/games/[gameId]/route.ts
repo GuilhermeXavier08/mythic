@@ -22,9 +22,9 @@ interface RouteParams {
   params: Promise<{ gameId: string }>;
 }
 
+// --- MÉTODO GET (Buscar detalhes) ---
 export async function GET(request: Request, { params }: RouteParams) {
   try {
-    // CORREÇÃO AQUI: Aguardamos o params antes de usar
     const { gameId } = await params;
     const userId = await getUserId(request);
 
@@ -35,7 +35,7 @@ export async function GET(request: Request, { params }: RouteParams) {
         developer: {
           select: { username: true }
         },
-        reviews: true // Trazemos as reviews para calcular a média
+        reviews: true 
       }
     });
 
@@ -58,7 +58,7 @@ export async function GET(request: Request, { params }: RouteParams) {
       }
     }
 
-    // 4. Monta a resposta limpa (sem mandar o array de reviews inteiro se não precisar)
+    // 4. Monta a resposta limpa
     const responseData = {
       id: game.id,
       title: game.title,
@@ -69,7 +69,6 @@ export async function GET(request: Request, { params }: RouteParams) {
       genre: game.genre,
       createdAt: game.createdAt,
       developer: game.developer,
-      // Dados calculados
       averageRating,
       totalReviews,
       currentUserRating
@@ -80,5 +79,59 @@ export async function GET(request: Request, { params }: RouteParams) {
   } catch (error) {
     console.error("Erro ao buscar detalhes do jogo:", error);
     return NextResponse.json({ error: 'Erro interno do servidor' }, { status: 500 });
+  }
+}
+
+// --- MÉTODO PATCH (Atualizar jogo - O que faltava!) ---
+export async function PATCH(request: Request, { params }: RouteParams) {
+  try {
+    // 1. Aguarda params
+    const { gameId } = await params;
+
+    // 2. Autenticação (Verificar quem está editando)
+    const authHeader = request.headers.get('Authorization');
+    if (!authHeader) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
+
+    const token = authHeader.split(' ')[1];
+    
+    // Verifica token
+    try {
+      jwt.verify(token, JWT_SECRET);
+    } catch (err) {
+      return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+
+    // 3. Receber os novos dados do corpo da requisição
+    const body = await request.json();
+    const { title, description, price, imageUrl, gameUrl, genre } = body;
+
+    // 4. Verificar se o jogo existe
+    const existingGame = await prisma.game.findUnique({
+      where: { id: gameId }
+    });
+
+    if (!existingGame) {
+      return NextResponse.json({ error: 'Jogo não encontrado' }, { status: 404 });
+    }
+
+    // 5. Atualizar no Banco de Dados
+    const updatedGame = await prisma.game.update({
+      where: { id: gameId },
+      data: {
+        title,
+        description,
+        // Garante que preço seja número
+        price: typeof price === 'string' ? parseFloat(price) : price, 
+        imageUrl,
+        gameUrl, // <--- O campo importante para arrumar o link do celular
+        genre,
+      },
+    });
+
+    return NextResponse.json(updatedGame, { status: 200 });
+
+  } catch (error: any) {
+    console.error("Erro ao atualizar jogo:", error);
+    return NextResponse.json({ error: 'Erro interno ao atualizar' }, { status: 500 });
   }
 }

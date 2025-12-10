@@ -1,4 +1,3 @@
-// src/app/api/play/[gameId]/route.ts
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
@@ -9,35 +8,43 @@ interface UserPayload {
   userId: string;
 }
 
+// 1. MUDANÇA NA ASSINATURA: params agora é uma Promise
 export async function GET(
   request: Request,
-  { params }: { params: { gameId: string } }
+  props: { params: Promise<{ gameId: string }> } 
 ) {
   try {
-    // 1. Autenticar o usuário
+    // 2. MUDANÇA AQUI: Aguarde os params antes de ler o ID
+    const params = await props.params;
+    const gameId = params.gameId;
+
+    // --- Autenticação ---
     const authHeader = request.headers.get('Authorization');
     if (!authHeader) return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, JWT_SECRET) as UserPayload;
-    if (!decoded) return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    // Adicionei tratamento de erro no verify para evitar crash se o token for malformado
+    let decoded: UserPayload;
+    try {
+        decoded = jwt.verify(token, JWT_SECRET) as UserPayload;
+    } catch (err) {
+        return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
+    
+    if (!decoded || !decoded.userId) {
+        return NextResponse.json({ error: 'Token inválido' }, { status: 401 });
+    }
     
     const userId = decoded.userId;
 
-    // --- MUDANÇA AQUI ---
-    // Em vez de: const { gameId } = params;
-    // Acessamos diretamente para o aviso sumir
-    const gameId = params.gameId;
-    // --- FIM DA MUDANÇA ---
-
-    // 2. Verificar se o usuário POSSUI este jogo
+    // --- Verificar Compra ---
     const purchase = await prisma.purchase.findFirst({
       where: {
         userId: userId,
         gameId: gameId,
       },
       include: {
-        game: { // 3. Se ele possui, pegue os dados do jogo
+        game: { 
           select: {
             gameUrl: true,
             title: true,
@@ -46,18 +53,19 @@ export async function GET(
       },
     });
 
-    // 4. Se não houver compra, ou o jogo não for encontrado
+    // Se não houver compra, ou o jogo não for encontrado
     if (!purchase || !purchase.game) {
       return NextResponse.json(
         { error: 'Acesso negado. Você não possui este jogo.' },
-        { status: 403 } // 403 Forbidden
+        { status: 403 }
       );
     }
 
-    // 5. Sucesso: Retorna a URL e o título do jogo
+    // Sucesso
     return NextResponse.json(purchase.game, { status: 200 });
 
   } catch (error: any) {
+    console.error("Erro na API Play:", error); // Bom para debugar
     if (error.name === 'TokenExpiredError') {
       return NextResponse.json({ error: 'Sessão expirada' }, { status: 401 });
     }

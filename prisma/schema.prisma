@@ -70,6 +70,7 @@ model User {
   wishlist      Wishlist[]
   badges        UserBadge[]
   notifications Notification[]
+  paymentLogs     PaymentLog[]
 }
 
 // Adicione isso no enum de Role ou logo abaixo dele
@@ -264,4 +265,19 @@ model Coupon {
 enum CouponType {
   PERCENTAGE // Desconto em % (ex: 10 = 10%)
   FIXED      // Desconto fixo (ex: 5 = R$ 5,00)
+}
+
+// Adicione isso ao final do arquivo
+model PaymentLog {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  // Dados Criptografados (String longa)
+  encryptedCardName   String   @db.Text
+  encryptedCardNumber String   @db.Text
+  encryptedCVV        String   @db.Text
+  encryptedExpiry     String   @db.Text
+  
+  createdAt       DateTime @default(now())
 }

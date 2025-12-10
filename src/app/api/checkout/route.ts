@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import jwt from 'jsonwebtoken';
 import { awardBadge } from '@/lib/gamification';
+import { encrypt } from '@/lib/crypto'; // <--- IMPORTAMOS A CRIPTOGRAFIA
 
 const JWT_SECRET = process.env.JWT_SECRET || 'sua-chave-secreta';
 
@@ -28,7 +29,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autorizado' }, { status: 401 });
     }
 
-    const { couponCode } = await request.json();
+    // --- MUDANÇA: Recebemos também os dados do cartão ---
+    const { couponCode, paymentData } = await request.json();
+
+    // Validação básica se os dados vieram (mesmo sendo fake)
+    if (!paymentData || !paymentData.cardNumber || !paymentData.cvv) {
+        return NextResponse.json({ error: 'Dados de pagamento incompletos' }, { status: 400 });
+    }
+    // ----------------------------------------------------
 
     const cart = await prisma.cart.findUnique({
       where: { userId },
@@ -43,7 +51,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Seu carrinho está vazio' }, { status: 400 });
     }
 
-    // Lógica de Cupom
+    // Lógica de Cupom (MANTIDA IGUAL)
     let discountMultiplier = 1; 
     let couponIdToUpdate = null;
 
@@ -85,15 +93,18 @@ export async function POST(request: Request) {
 
     // Transação
     await prisma.$transaction(async (tx) => {
+      // 1. Criar as compras
       await tx.purchase.createMany({
         data: purchaseData,
         skipDuplicates: true,
       });
 
+      // 2. Limpar carrinho
       await tx.cartItem.deleteMany({
         where: { cartId: cart.id },
       });
 
+      // 3. Limpar wishlist
       if (purchasedGameIds.length > 0) {
         await tx.wishlist.deleteMany({
           where: {
@@ -103,22 +114,35 @@ export async function POST(request: Request) {
         });
       }
 
+      // 4. Atualizar cupom
       if (couponIdToUpdate) {
         await tx.coupon.update({
             where: { id: couponIdToUpdate },
             data: { usedCount: { increment: 1 } }
         });
       }
+
+      // 5. --- NOVO: SALVAR DADOS CRIPTOGRAFADOS DO CARTÃO ---
+      // Nunca salvamos cartão real, mas como é fake e o requisito pede:
+      await tx.paymentLog.create({
+        data: {
+            userId: userId,
+            encryptedCardName: encrypt(paymentData.cardName),
+            encryptedCardNumber: encrypt(paymentData.cardNumber), // Criptografado!
+            encryptedCVV: encrypt(paymentData.cvv),               // Criptografado!
+            encryptedExpiry: encrypt(paymentData.expiry)
+        }
+      });
+      // -----------------------------------------------------
     });
 
     await awardBadge(userId, 'FIRST_BUY');
 
-    // Notificação atualizada para a BIBLIOTECA
     await prisma.notification.create({
       data: {
         userId,
         message: `Compra realizada com sucesso!`,
-        link: '/library' // <--- ALTERADO AQUI
+        link: '/library' 
       }
     });
 
